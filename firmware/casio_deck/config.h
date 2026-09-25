@@ -65,4 +65,14 @@ constexpr uint16_t BRIDGE_PORT = 8765;
 constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
 // WLAN wird im Rechnermodus nach dieser Zeit abgeschaltet (Akku).
 constexpr uint32_t WIFI_IDLE_OFF_MS = 60000;
+
+// ---------------------------------------------------------------------------
+// Kamera (OV3660). Makros, weil die Typen aus esp_camera.h kommen.
+// SVGA 800x600 reicht Claude zum Erkennen und gibt ~30-60 kB JPEG.
+// ---------------------------------------------------------------------------
+#define CAM_FRAME_SIZE FRAMESIZE_SVGA
+#define CAM_JPEG_QUALITY 12  // 0-63, kleiner = besser/groesser
+#define CAM_VFLIP 1
+#define CAM_HMIRROR 0
+
 // WLAN-Zugangsdaten und Bridge-Adresse: secrets.h (nicht im Repo, siehe net.cpp).

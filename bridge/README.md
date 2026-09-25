@@ -37,6 +37,9 @@ python testclient.py ws://<handy-ip>:8765
 
 Eingaben: normaler Text = Frage, `/new` = neue Sitzung, `/img foto.jpg` = Bild schicken.
 
+Oder mit dem PC-Simulator der Firmware, der sich wie der Taschenrechner bedient
+(siehe `firmware/README.md`): `firmware/sim/casio-sim --host <handy-ip>`.
+
 ## Optionen
 
 | Flag | Bedeutung |

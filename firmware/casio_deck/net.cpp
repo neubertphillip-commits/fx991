@@ -6,6 +6,7 @@
 #include <WiFi.h>
 
 #include "config.h"
+#include "screen.h"
 
 // WLAN-Zugangsdaten und Bridge-Adresse (nicht im Repo)
 #if __has_include("secrets.h")
@@ -23,12 +24,14 @@ bool wantOn = false;
 bool wsStarted = false;
 bool wsConnected = false;
 uint32_t connectStart = 0;
+const char* bridgeHost = BRIDGE_HOST;
+uint16_t bridgePort = BRIDGE_PORT;
 
 void onWsEvent(WStype_t type, uint8_t* payload, size_t length) {
   switch (type) {
     case WStype_CONNECTED:
       wsConnected = true;
-      Serial.printf("[net] Bridge verbunden (%s:%u)\n", BRIDGE_HOST, BRIDGE_PORT);
+      Serial.printf("[net] Bridge verbunden (%s:%u)\n", bridgeHost, bridgePort);
       break;
     case WStype_DISCONNECTED:
       if (wsConnected) Serial.println("[net] Bridge getrennt");
@@ -71,9 +74,9 @@ void stopAll() {
 
 bool sendJson(JsonDocument& doc) {
   if (!wsConnected) return false;
-  String out;
-  serializeJson(doc, out);
-  return ws.sendTXT(out);
+  char out[Screen::INPUT_BYTES * 2 + 64];  // Platz fuer JSON-Escapes
+  size_t len = serializeJson(doc, out, sizeof(out));
+  return len > 0 && len < sizeof(out) - 1 && ws.sendTXT(out, len);
 }
 
 }  // namespace
@@ -94,6 +97,11 @@ void enable(bool on) {
 }
 
 bool enabled() { return wantOn; }
+
+void setBridge(const char* host, uint16_t port) {
+  bridgeHost = host;
+  bridgePort = port;
+}
 
 State state() {
   if (!wantOn) return State::Off;
@@ -131,7 +139,7 @@ void loop() {
 
   if (!wsStarted) {
     Serial.printf("[net] WLAN verbunden, IP %s\n", WiFi.localIP().toString().c_str());
-    ws.begin(BRIDGE_HOST, BRIDGE_PORT, "/");
+    ws.begin(bridgeHost, bridgePort, "/");
     ws.onEvent(onWsEvent);
     ws.setReconnectInterval(3000);
     ws.enableHeartbeat(15000, 3000, 2);  // WebSocket-Ping, erkennt tote Verbindungen

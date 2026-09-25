@@ -19,6 +19,10 @@ enum class State : uint8_t {
 using MessageHandler = void (*)(const char* type, const char* text);
 
 void begin(MessageHandler handler);
+
+// Bridge-Adresse aendern (Standard aus secrets.h); z.B. fuer den PC-Simulator.
+void setBridge(const char* host, uint16_t port);
+
 void loop();
 
 void enable(bool on);

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../casio_deck/calc.h"
+#include "../casio_deck/multitap.h"
 #include "../casio_deck/screen.h"
 
 static int failures = 0;
@@ -126,9 +127,65 @@ static void testScreen() {
   CHECK(!strcmp(t.viewLine(0), "11"));  // aeltester Eintrag im Puffer
 }
 
+// Tippt eine Tastenfolge mit Zeitabstaenden in einen Screen, wie app.cpp es tut.
+static void tap(Screen& s, MultiTap& mt, Key k, uint32_t& now, uint32_t gap, bool upper = false) {
+  now += gap;
+  const char* text;
+  bool replace;
+  if (mt.feed(k, upper, now, text, replace)) {
+    if (replace) s.inputBackspace();
+    s.inputAppend(text);
+  }
+}
+
+static void testMultiTap() {
+  static Screen s;
+  MultiTap mt;
+  uint32_t now = 1000;
+  // "hallo": 44 2 555 (Pause) 555 666
+  tap(s, mt, K_4, now, 100);
+  tap(s, mt, K_4, now, 200);
+  tap(s, mt, K_2, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, MultiTap::TIMEOUT_MS + 1);  // gleiche Taste nach Pause = neues Zeichen
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_6, now, 200);
+  tap(s, mt, K_6, now, 200);
+  tap(s, mt, K_6, now, 200);
+  CHECK(!strcmp(s.input(), "hallo"));
+  CHECK(mt.pending(now));
+  CHECK(!mt.pending(now + MultiTap::TIMEOUT_MS));
+
+  // Leerzeichen, Umlaut, Grossbuchstabe (gilt fuer die ganze Auswahl), Umlauf
+  s.inputClear();
+  mt.reset();
+  tap(s, mt, K_8, now, 100, true);
+  tap(s, mt, K_8, now, 100);
+  tap(s, mt, K_8, now, 100);
+  tap(s, mt, K_8, now, 100);  // T U V Ü
+  CHECK(!strcmp(s.input(), "\xC3\x9C"));
+  tap(s, mt, K_0, now, 100);
+  tap(s, mt, K_7, now, 100);
+  for (int i = 0; i < 6; i++) tap(s, mt, K_7, now, 100);  // p q r s ß 7 -> wieder p
+  CHECK(!strcmp(s.input(), "\xC3\x9C p"));
+
+  // Andere Taste beendet die Auswahl
+  s.inputClear();
+  tap(s, mt, K_2, now, 100);
+  const char* text;
+  bool replace;
+  CHECK(!mt.feed(K_ADD, false, now, text, replace));
+  tap(s, mt, K_2, now, 100);
+  CHECK(!strcmp(s.input(), "aa"));
+}
+
 int main() {
   testCalc();
   testScreen();
+  testMultiTap();
   if (failures) {
     printf("%d Fehler\n", failures);
     return 1;

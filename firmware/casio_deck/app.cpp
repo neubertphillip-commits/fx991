@@ -2,19 +2,21 @@
 
 #include <Arduino.h>
 #include <string.h>
+#include <strings.h>
 
 #include "calc.h"
+#include "camera.h"
 #include "config.h"
 #include "display.h"
 #include "keypad.h"
-#include "keys.h"
+#include "multitap.h"
 #include "net.h"
 #include "screen.h"
 
 namespace {
 
 // Rechner: offline, WLAN aus. Terminal: Prompts an die Bridge (claude -p).
-// Kamera: Foto an die Bridge (noch nicht implementiert).
+// Kamera: Foto (+ optional Frage) an die Bridge.
 // MODE wechselt reihum; auf dem seriellen Monitor auch :calc, :term, :cam.
 enum class Mode : uint8_t { Calc, Terminal, Camera };
 constexpr uint8_t MODE_COUNT = 3;
@@ -22,10 +24,13 @@ const char* const MODE_NAMES[MODE_COUNT] = {"RECHNER", "TERMINAL", "KAMERA"};
 
 Mode mode = Mode::Calc;
 Screen screens[MODE_COUNT];
+// ALPHA-Zustand je Modus: im Terminal und bei der Kamera-Frage meist Text.
+bool alpha[MODE_COUNT] = {false, true, true};
 
 bool keypadOk = false;
 bool logKeys = false;  // alle Tastenereignisse seriell ausgeben
 bool shift = false;
+MultiTap multitap;
 
 // Rechner
 double ans = 0;
@@ -33,45 +38,50 @@ bool degrees = true;
 uint32_t calcSince = 0;  // seit wann im Rechnermodus (WLAN-Abschaltung)
 
 // Bridge
-bool busy = false;                         // Anfrage laeuft
-Mode replyTo = Mode::Terminal;             // wohin die Antwort geschrieben wird
-char pending[Screen::INPUT_BYTES] = "";    // Prompt, der auf die Verbindung wartet
+bool busy = false;                       // Anfrage laeuft
+Mode replyTo = Mode::Terminal;           // wohin die Antwort geschrieben wird
+char pending[Screen::INPUT_BYTES] = "";  // Prompt, der auf die Verbindung wartet
 
 char serialBuf[Screen::INPUT_BYTES];
 size_t serialLen = 0;
 
-Screen& screen(Mode m) { return screens[static_cast<uint8_t>(m)]; }
+uint8_t idx(Mode m) { return static_cast<uint8_t>(m); }
+Screen& screen(Mode m) { return screens[idx(m)]; }
 Screen& screen() { return screen(mode); }
 
 void updateStatus() {
   char buf[Screen::LINE_BYTES];
   const char* netState = net::stateName(net::state());
+  const char* input = alpha[idx(mode)] ? (shift ? "ABC" : "abc") : (shift ? "S" : "123");
   switch (mode) {
     case Mode::Calc:
-      snprintf(buf, sizeof(buf), "%s%s | %s | WLAN %s%s", MODE_NAMES[0], shift ? " S" : "",
+      snprintf(buf, sizeof(buf), "%s %s | %s | WLAN %s%s", MODE_NAMES[0], input,
                degrees ? "DEG" : "RAD", netState, keypadOk ? "" : " | MCP fehlt");
       break;
     default:
-      snprintf(buf, sizeof(buf), "%s%s | Bridge %s%s%s", MODE_NAMES[static_cast<uint8_t>(mode)],
-               shift ? " S" : "", netState, busy ? " | denkt..." : "",
-               keypadOk ? "" : " | MCP fehlt");
+      snprintf(buf, sizeof(buf), "%s %s | Bridge %s%s%s", MODE_NAMES[idx(mode)], input, netState,
+               busy ? " | denkt..." : "", keypadOk ? "" : " | MCP fehlt");
       break;
   }
   screen().setStatus(buf);
+  screen().setInputMarked(multitap.pending(millis()));
 }
 
 void setMode(Mode m) {
+  if (mode == Mode::Camera && m != Mode::Camera) camera::end();
   mode = m;
   shift = false;
+  multitap.reset();
   if (m == Mode::Calc) {
     calcSince = millis();
   } else {
     net::enable(true);
   }
+  if (m == Mode::Camera && !camera::begin()) screen().print(camera::error());
   updateStatus();
 }
 
-void nextMode() { setMode(static_cast<Mode>((static_cast<uint8_t>(mode) + 1) % MODE_COUNT)); }
+void nextMode() { setMode(static_cast<Mode>((idx(mode) + 1) % MODE_COUNT)); }
 
 // ---------------------------------------------------------------------------
 // Bridge
@@ -146,13 +156,40 @@ void submitTerminal() {
   sendPending();
 }
 
+// Foto aufnehmen und mit der Eingabe als Frage schicken (leer = "beschreibe das Bild").
 void submitCamera() {
-  // TODO (CLAUDE.md, Offen 4): OV3660 initialisieren, JPEG aufnehmen,
-  // net::sendImage() und danach Prompt senden; Kamera wieder abschalten.
-  screen(Mode::Camera).print("Kamera noch nicht implementiert");
+  Screen& s = screen(Mode::Camera);
+  if (busy) {
+    s.print("(warte noch auf die letzte Antwort)");
+    return;
+  }
+  if (net::state() != net::State::Online) {
+    s.print("(Bridge nicht verbunden)");
+    return;
+  }
+  const uint8_t* jpeg;
+  size_t len;
+  if (!camera::capture(jpeg, len)) {
+    s.print(camera::error());
+    return;
+  }
+  bool sent = net::sendImage(jpeg, len);
+  camera::release();
+  if (!sent || !net::sendPrompt(s.input())) {
+    s.print("! Senden fehlgeschlagen");
+    return;
+  }
+  char line[Screen::INPUT_BYTES + 32];
+  snprintf(line, sizeof(line), "> [Foto %u kB] %s", static_cast<unsigned>((len + 512) / 1024),
+           s.input());
+  s.print(line);
+  s.inputClear();
+  replyTo = Mode::Camera;
+  busy = true;
 }
 
 void submit() {
+  multitap.reset();
   switch (mode) {
     case Mode::Calc: submitCalc(); break;
     case Mode::Terminal: submitTerminal(); break;
@@ -165,7 +202,7 @@ void submit() {
 // ---------------------------------------------------------------------------
 
 // Text, den eine Taste in die Eingabezeile schreibt, sonst nullptr.
-const char* keyText(Key k) {
+const char* keyText(Key k, bool shifted) {
   switch (k) {
     case K_0: return "0";
     case K_1: return "1";
@@ -188,10 +225,10 @@ const char* keyText(Key k) {
     case K_LPAR: return "(";
     case K_RPAR: return ")";
     case K_SQRT: return "sqrt(";
-    case K_SIN: return shift ? "asin(" : "sin(";
-    case K_COS: return shift ? "acos(" : "cos(";
-    case K_TAN: return shift ? "atan(" : "tan(";
-    case K_LN: return shift ? "exp(" : "ln(";
+    case K_SIN: return shifted ? "asin(" : "sin(";
+    case K_COS: return shifted ? "acos(" : "cos(";
+    case K_TAN: return shifted ? "atan(" : "tan(";
+    case K_LN: return shifted ? "exp(" : "ln(";
     case K_LOG: return "log(";
     default: return nullptr;
   }
@@ -202,8 +239,22 @@ void onKey(Key k) {
   bool wasShift = shift;
   shift = false;
 
+  // Buchstaben per Mehrfachtippen, SHIFT davor = Grossbuchstabe
+  if (alpha[idx(mode)]) {
+    const char* text;
+    bool replace;
+    if (multitap.feed(k, wasShift, millis(), text, replace)) {
+      if (replace) s.inputBackspace();
+      s.inputAppend(text);
+      return;
+    }
+  } else {
+    multitap.reset();
+  }
+
   switch (k) {
     case K_SHIFT: shift = !wasShift; break;
+    case K_ALPHA: alpha[idx(mode)] = !alpha[idx(mode)]; break;
     case K_MODE:
       if (wasShift && mode == Mode::Calc) degrees = !degrees;  // SHIFT+MODE: DEG/RAD
       else nextMode();
@@ -219,16 +270,12 @@ void onKey(Key k) {
       break;
     case K_UP: s.scroll(wasShift ? Screen::VIEW_ROWS : 1); break;
     case K_DOWN: s.scroll(wasShift ? -Screen::VIEW_ROWS : -1); break;
-    case K_ALPHA:
-      // TODO: Texteingabe per Mehrfachtippen (ABC auf den Zifferntasten).
+    case K_RIGHT:
+      // Mehrfachtippen sofort abschliessen, z.B. fuer zwei Buchstaben auf derselben Taste
       break;
-    default: {
-      shift = wasShift;  // fuer keyText()
-      const char* text = keyText(k);
-      shift = false;
-      if (text) s.inputAppend(text);
+    default:
+      if (const char* text = keyText(k, wasShift)) s.inputAppend(text);
       break;
-    }
   }
 }
 
@@ -257,6 +304,13 @@ void pollKeys() {
 // Serieller Monitor: Zeile = Eingabe fuer den aktuellen Modus, ":..." = Befehl
 // ---------------------------------------------------------------------------
 
+Key keyByName(const char* name) {
+  for (uint8_t k = 1; k < K_COUNT; k++) {
+    if (!strcasecmp(name, keyName(static_cast<Key>(k)))) return static_cast<Key>(k);
+  }
+  return K_NONE;
+}
+
 void serialCommand(const char* cmd) {
   if (!strcmp(cmd, "calc")) setMode(Mode::Calc);
   else if (!strcmp(cmd, "term")) setMode(Mode::Terminal);
@@ -269,9 +323,13 @@ void serialCommand(const char* cmd) {
   else if (!strcmp(cmd, "ping")) {
     replyTo = mode;
     if (!net::sendPing()) Serial.println("[app] Bridge nicht verbunden");
+  } else if (!strncmp(cmd, "key ", 4)) {
+    Key k = keyByName(cmd + 4);
+    if (k == K_NONE) Serial.println("[app] unbekannte Taste (Namen wie EXE, AC, SHIFT, 7, sin)");
+    else onKey(k);
   } else {
     Serial.println("Befehle: :calc :term :cam  :keys (Tastenprotokoll)  :wifi (an/aus)");
-    Serial.println("         :new (neue Claude-Sitzung)  :ping");
+    Serial.println("         :new (neue Claude-Sitzung)  :ping  :key NAME (Taste druecken)");
     Serial.println("Jede andere Zeile wird im aktuellen Modus eingegeben und abgeschickt.");
   }
 }
@@ -337,5 +395,7 @@ void loop() {
   // Nicht dauerhaft mit 100 % CPU kreisen; waehrend eines Tastenscans kuerzer.
   delay(keypad::active() ? 1 : 5);
 }
+
+void injectKey(Key k) { onKey(k); }
 
 }  // namespace app

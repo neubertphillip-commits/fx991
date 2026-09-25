@@ -1,0 +1,341 @@
+#include "app.h"
+
+#include <Arduino.h>
+#include <string.h>
+
+#include "calc.h"
+#include "config.h"
+#include "display.h"
+#include "keypad.h"
+#include "keys.h"
+#include "net.h"
+#include "screen.h"
+
+namespace {
+
+// Rechner: offline, WLAN aus. Terminal: Prompts an die Bridge (claude -p).
+// Kamera: Foto an die Bridge (noch nicht implementiert).
+// MODE wechselt reihum; auf dem seriellen Monitor auch :calc, :term, :cam.
+enum class Mode : uint8_t { Calc, Terminal, Camera };
+constexpr uint8_t MODE_COUNT = 3;
+const char* const MODE_NAMES[MODE_COUNT] = {"RECHNER", "TERMINAL", "KAMERA"};
+
+Mode mode = Mode::Calc;
+Screen screens[MODE_COUNT];
+
+bool keypadOk = false;
+bool logKeys = false;  // alle Tastenereignisse seriell ausgeben
+bool shift = false;
+
+// Rechner
+double ans = 0;
+bool degrees = true;
+uint32_t calcSince = 0;  // seit wann im Rechnermodus (WLAN-Abschaltung)
+
+// Bridge
+bool busy = false;                         // Anfrage laeuft
+Mode replyTo = Mode::Terminal;             // wohin die Antwort geschrieben wird
+char pending[Screen::INPUT_BYTES] = "";    // Prompt, der auf die Verbindung wartet
+
+char serialBuf[Screen::INPUT_BYTES];
+size_t serialLen = 0;
+
+Screen& screen(Mode m) { return screens[static_cast<uint8_t>(m)]; }
+Screen& screen() { return screen(mode); }
+
+void updateStatus() {
+  char buf[Screen::LINE_BYTES];
+  const char* netState = net::stateName(net::state());
+  switch (mode) {
+    case Mode::Calc:
+      snprintf(buf, sizeof(buf), "%s%s | %s | WLAN %s%s", MODE_NAMES[0], shift ? " S" : "",
+               degrees ? "DEG" : "RAD", netState, keypadOk ? "" : " | MCP fehlt");
+      break;
+    default:
+      snprintf(buf, sizeof(buf), "%s%s | Bridge %s%s%s", MODE_NAMES[static_cast<uint8_t>(mode)],
+               shift ? " S" : "", netState, busy ? " | denkt..." : "",
+               keypadOk ? "" : " | MCP fehlt");
+      break;
+  }
+  screen().setStatus(buf);
+}
+
+void setMode(Mode m) {
+  mode = m;
+  shift = false;
+  if (m == Mode::Calc) {
+    calcSince = millis();
+  } else {
+    net::enable(true);
+  }
+  updateStatus();
+}
+
+void nextMode() { setMode(static_cast<Mode>((static_cast<uint8_t>(mode) + 1) % MODE_COUNT)); }
+
+// ---------------------------------------------------------------------------
+// Bridge
+// ---------------------------------------------------------------------------
+
+void onBridge(const char* type, const char* text) {
+  Screen& s = screen(replyTo);
+  if (!strcmp(type, "busy")) {
+    busy = true;
+  } else if (!strcmp(type, "line")) {
+    s.print(text);
+  } else if (!strcmp(type, "done")) {
+    busy = false;
+    calcSince = millis();
+  } else if (!strcmp(type, "err")) {
+    char buf[Screen::LINE_BYTES * 2];
+    snprintf(buf, sizeof(buf), "! %s", text);
+    s.print(buf);
+  } else if (!strcmp(type, "pong")) {
+    s.print("pong");
+  }
+}
+
+void sendPending() {
+  if (!pending[0] || net::state() != net::State::Online) return;
+  if (net::sendPrompt(pending)) {
+    busy = true;
+    pending[0] = '\0';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Eingabe abschicken (EXE)
+// ---------------------------------------------------------------------------
+
+void submitCalc() {
+  Screen& s = screen(Mode::Calc);
+  const char* expr = s.input();
+  if (!expr[0]) return;
+
+  CalcResult r = calcEval(expr, ans, degrees);
+  char line[Screen::LINE_BYTES];
+  s.print(expr);
+  if (r.ok) {
+    char num[32];
+    calcFormat(r.value, num, sizeof(num));
+    snprintf(line, sizeof(line), "%*s", Screen::COLS, num);  // rechtsbuendig wie beim Casio
+    s.print(line);
+    ans = r.value;
+    s.inputClear();
+  } else {
+    snprintf(line, sizeof(line), "  %s", r.error);
+    s.print(line);  // Eingabe bleibt zum Korrigieren stehen
+  }
+}
+
+void submitTerminal() {
+  Screen& s = screen(Mode::Terminal);
+  if (!s.input()[0]) return;
+  if (busy || pending[0]) {
+    s.print("(warte noch auf die letzte Antwort)");
+    return;
+  }
+  char line[Screen::INPUT_BYTES + 2];
+  snprintf(line, sizeof(line), "> %s", s.input());
+  s.print(line);
+  strncpy(pending, s.input(), sizeof(pending) - 1);
+  s.inputClear();
+  replyTo = Mode::Terminal;
+  net::enable(true);
+  if (net::state() != net::State::Online) s.print("(wird gesendet, sobald die Bridge verbunden ist)");
+  sendPending();
+}
+
+void submitCamera() {
+  // TODO (CLAUDE.md, Offen 4): OV3660 initialisieren, JPEG aufnehmen,
+  // net::sendImage() und danach Prompt senden; Kamera wieder abschalten.
+  screen(Mode::Camera).print("Kamera noch nicht implementiert");
+}
+
+void submit() {
+  switch (mode) {
+    case Mode::Calc: submitCalc(); break;
+    case Mode::Terminal: submitTerminal(); break;
+    case Mode::Camera: submitCamera(); break;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tasten
+// ---------------------------------------------------------------------------
+
+// Text, den eine Taste in die Eingabezeile schreibt, sonst nullptr.
+const char* keyText(Key k) {
+  switch (k) {
+    case K_0: return "0";
+    case K_1: return "1";
+    case K_2: return "2";
+    case K_3: return "3";
+    case K_4: return "4";
+    case K_5: return "5";
+    case K_6: return "6";
+    case K_7: return "7";
+    case K_8: return "8";
+    case K_9: return "9";
+    case K_DOT: return ".";
+    case K_EXP: return "E";
+    case K_ANS: return "Ans";
+    case K_ADD: return "+";
+    case K_SUB: return "-";
+    case K_MUL: return "*";
+    case K_DIV: return "/";
+    case K_POW: return "^";
+    case K_LPAR: return "(";
+    case K_RPAR: return ")";
+    case K_SQRT: return "sqrt(";
+    case K_SIN: return shift ? "asin(" : "sin(";
+    case K_COS: return shift ? "acos(" : "cos(";
+    case K_TAN: return shift ? "atan(" : "tan(";
+    case K_LN: return shift ? "exp(" : "ln(";
+    case K_LOG: return "log(";
+    default: return nullptr;
+  }
+}
+
+void onKey(Key k) {
+  Screen& s = screen();
+  bool wasShift = shift;
+  shift = false;
+
+  switch (k) {
+    case K_SHIFT: shift = !wasShift; break;
+    case K_MODE:
+      if (wasShift && mode == Mode::Calc) degrees = !degrees;  // SHIFT+MODE: DEG/RAD
+      else nextMode();
+      break;
+    case K_EXE: submit(); break;
+    case K_DEL: s.inputBackspace(); break;
+    case K_AC:
+      if (s.input()[0]) {
+        s.inputClear();
+      } else if (mode == Mode::Terminal && net::sendNew()) {
+        s.print("-- neue Sitzung --");
+      }
+      break;
+    case K_UP: s.scroll(wasShift ? Screen::VIEW_ROWS : 1); break;
+    case K_DOWN: s.scroll(wasShift ? -Screen::VIEW_ROWS : -1); break;
+    case K_ALPHA:
+      // TODO: Texteingabe per Mehrfachtippen (ABC auf den Zifferntasten).
+      break;
+    default: {
+      shift = wasShift;  // fuer keyText()
+      const char* text = keyText(k);
+      shift = false;
+      if (text) s.inputAppend(text);
+      break;
+    }
+  }
+}
+
+const char* mcpPinName(uint8_t pin) {
+  static char buf[8];
+  snprintf(buf, sizeof(buf), "GP%c%u", pin < 8 ? 'A' : 'B', pin % 8);
+  return buf;
+}
+
+void pollKeys() {
+  KeyEvent ev;
+  while (keypad::poll(ev)) {
+    Key k = keymapLookup(ev.row, ev.col);
+    if (k == K_NONE || logKeys) {
+      // Hilfe beim Ausmessen der Matrix: Position und MCP-Pins melden.
+      Serial.printf("[key] %s Zeile %u (%s) ", ev.pressed ? "gedrueckt " : "losgelassen",
+                    ev.row, mcpPinName(KEY_ROW_PINS[ev.row]));
+      Serial.printf("Spalte %u (%s) -> %s\n", ev.col, mcpPinName(KEY_COL_PINS[ev.col]),
+                    k == K_NONE ? "unbelegt" : keyName(k));
+    }
+    if (ev.pressed && k != K_NONE) onKey(k);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Serieller Monitor: Zeile = Eingabe fuer den aktuellen Modus, ":..." = Befehl
+// ---------------------------------------------------------------------------
+
+void serialCommand(const char* cmd) {
+  if (!strcmp(cmd, "calc")) setMode(Mode::Calc);
+  else if (!strcmp(cmd, "term")) setMode(Mode::Terminal);
+  else if (!strcmp(cmd, "cam")) setMode(Mode::Camera);
+  else if (!strcmp(cmd, "keys")) {
+    logKeys = !logKeys;
+    Serial.printf("[app] Tastenprotokoll %s\n", logKeys ? "an" : "aus");
+  } else if (!strcmp(cmd, "wifi")) net::enable(!net::enabled());
+  else if (!strcmp(cmd, "new")) onKey(K_AC);
+  else if (!strcmp(cmd, "ping")) {
+    replyTo = mode;
+    if (!net::sendPing()) Serial.println("[app] Bridge nicht verbunden");
+  } else {
+    Serial.println("Befehle: :calc :term :cam  :keys (Tastenprotokoll)  :wifi (an/aus)");
+    Serial.println("         :new (neue Claude-Sitzung)  :ping");
+    Serial.println("Jede andere Zeile wird im aktuellen Modus eingegeben und abgeschickt.");
+  }
+}
+
+void pollSerial() {
+  while (Serial.available()) {
+    char c = static_cast<char>(Serial.read());
+    if (c == '\r') continue;
+    if (c != '\n') {
+      if (serialLen < sizeof(serialBuf) - 1) serialBuf[serialLen++] = c;
+      continue;
+    }
+    serialBuf[serialLen] = '\0';
+    serialLen = 0;
+    if (serialBuf[0] == ':') {
+      serialCommand(serialBuf + 1);
+    } else if (serialBuf[0]) {
+      screen().inputClear();
+      screen().inputAppend(serialBuf);
+      submit();
+    }
+  }
+}
+
+}  // namespace
+
+namespace app {
+
+void begin() {
+  Serial.begin(115200);
+  display::begin();
+  delay(500);
+  Serial.println("\nCasio-Deck startet");
+
+  keypadOk = keypad::begin();
+  if (!keypadOk) Serial.printf("[key] MCP23017 an 0x%02X antwortet nicht\n", MCP_ADDR);
+
+  net::begin(onBridge);
+  setMode(Mode::Calc);
+  screen(Mode::Calc).print("Casio-Deck bereit. MODE wechselt Rechner/Terminal/Kamera.");
+  screen(Mode::Calc).print("Serieller Monitor: ':help' fuer Befehle.");
+}
+
+void loop() {
+  pollKeys();
+  pollSerial();
+  net::loop();
+  if (busy && net::state() != net::State::Online) {
+    busy = false;  // Antwort kommt nicht mehr
+    screen(replyTo).print("! Verbindung zur Bridge verloren");
+  }
+  sendPending();
+
+  // WLAN im Rechnermodus nach einer Weile abschalten (Akku)
+  if (mode == Mode::Calc && net::enabled() && !busy && !pending[0] &&
+      millis() - calcSince > WIFI_IDLE_OFF_MS) {
+    net::enable(false);
+  }
+
+  updateStatus();
+  display::render(screen());
+
+  // Nicht dauerhaft mit 100 % CPU kreisen; waehrend eines Tastenscans kuerzer.
+  delay(keypad::active() ? 1 : 5);
+}
+
+}  // namespace app

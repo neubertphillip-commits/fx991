@@ -27,11 +27,12 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 ## Struktur
 
 - `bridge/` Python-Bridge fuer Termux (lokal getestet), siehe `bridge/README.md` fuer Protokoll und Setup.
-- `firmware/` (noch nicht angelegt) Arduino/C++ fuer den ESP32.
+- `firmware/` Arduino/C++ fuer den ESP32 (PlatformIO oder Arduino-IDE, Core 3.x), siehe `firmware/README.md`.
+  Ohne Display gibt die Firmware den Bildschirm auf dem seriellen Monitor aus; Eingaben gehen auch dort.
 
 ## Offen
 
 1. Tastaturmatrix des fx-991 ausmessen (Modell noch unklar), Zeilen/Spalten dokumentieren.
-2. Firmware-Grundgeruest: Zustandsautomat (Rechnermodus / Terminal / Kamera), WLAN, WebSocket-Client, MCP23017-Scan.
-3. LT7680-Treiber, sobald das Panel da ist.
+2. ~~Firmware-Grundgeruest~~ steht (kompiliert, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt; ALPHA-Texteingabe.
+3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`).
 4. Kamera (OV3660) -> Binaer-Frame an Bridge.

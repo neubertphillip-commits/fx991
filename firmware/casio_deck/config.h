@@ -1,0 +1,68 @@
+// Zentrale Konfiguration: Pins, Tastaturmatrix, Display, Netzwerk.
+#pragma once
+
+#include <stdint.h>
+
+// ---------------------------------------------------------------------------
+// XIAO ESP32S3 Pinbelegung (Dx = Kantenpin, Wert = GPIO)
+//
+//   D0  GPIO1   MCP23017 INTA (low-aktiv, RTC-faehig -> Wakeup aus Sleep)
+//   D1  GPIO2   LT7680 CS
+//   D2  GPIO3   LT7680 RST
+//   D3  GPIO4   LT7680 WAIT (optional)
+//   D4  GPIO5   I2C SDA  (MCP23017)
+//   D5  GPIO6   I2C SCL  (MCP23017)
+//   D6  GPIO43  frei
+//   D7  GPIO44  frei
+//   D8  GPIO7   SPI SCK  (LT7680, geteilt mit SD-Slot der Sense-Platine)
+//   D9  GPIO8   SPI MISO
+//   D10 GPIO9   SPI MOSI
+// ---------------------------------------------------------------------------
+constexpr int PIN_MCP_INT = 1;
+constexpr int PIN_LCD_CS = 2;
+constexpr int PIN_LCD_RST = 3;
+constexpr int PIN_LCD_WAIT = 4;
+constexpr int PIN_SDA = 5;
+constexpr int PIN_SCL = 6;
+constexpr int PIN_SPI_SCK = 7;
+constexpr int PIN_SPI_MISO = 8;
+constexpr int PIN_SPI_MOSI = 9;
+
+// ---------------------------------------------------------------------------
+// I2C / MCP23017
+// Zuerst ohne externe Pull-ups: interne ESP32-Pull-ups, 100 kHz.
+// Bei Problemen 4,7 kOhm nach 3V3 nachruesten.
+// ---------------------------------------------------------------------------
+constexpr uint8_t MCP_ADDR = 0x20;
+constexpr uint32_t I2C_FREQ = 100000;
+
+// ---------------------------------------------------------------------------
+// Tastaturmatrix (VORLAEUFIG, bis die Matrix des fx-991 ausgemessen ist)
+//
+// MCP-Pinnummern: 0..7 = GPA0..GPA7, 8..15 = GPB0..GPB7.
+// GPA7/GPB7 duerfen laut Datenblatt nur Ausgaenge sein -> Zeilen.
+// Spalten sind Eingaenge mit internen Pull-ups (GPPU).
+// ---------------------------------------------------------------------------
+constexpr uint8_t KEY_ROW_PINS[] = {8, 9, 10, 11, 12, 13, 14, 15, 7};  // GPB0..GPB7, GPA7
+constexpr uint8_t KEY_COL_PINS[] = {0, 1, 2, 3, 4, 5, 6};              // GPA0..GPA6
+constexpr uint8_t KEY_ROWS = sizeof(KEY_ROW_PINS);
+constexpr uint8_t KEY_COLS = sizeof(KEY_COL_PINS);
+
+constexpr uint32_t KEY_SCAN_MS = 5;       // Scanintervall, solange eine Taste gedrueckt ist
+constexpr uint8_t KEY_DEBOUNCE_SCANS = 4;  // so viele gleiche Scans = stabil (~20 ms)
+
+// ---------------------------------------------------------------------------
+// Display: 480x640 IPS, Textkonsole mit 8x16-Font -> 60x40 Zeichen.
+// Muss zu `bridge.py --cols` passen.
+// ---------------------------------------------------------------------------
+constexpr uint8_t SCREEN_COLS = 60;
+constexpr uint8_t SCREEN_ROWS = 40;
+
+// ---------------------------------------------------------------------------
+// Netzwerk
+// ---------------------------------------------------------------------------
+constexpr uint16_t BRIDGE_PORT = 8765;
+constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
+// WLAN wird im Rechnermodus nach dieser Zeit abgeschaltet (Akku).
+constexpr uint32_t WIFI_IDLE_OFF_MS = 60000;
+// WLAN-Zugangsdaten und Bridge-Adresse: secrets.h (nicht im Repo, siehe net.cpp).

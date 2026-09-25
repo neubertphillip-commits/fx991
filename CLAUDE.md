@@ -11,9 +11,18 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 
 - Seeed XIAO ESP32S3 Sense (OV3660-Kamera, abnehmbare Sense-Platine, LiPo-Lader onboard, 11 GPIO an der Kante)
 - BuyDisplay 2,4" Bar-Type IPS 480x640, SPI+RGB, 40-Pin-ZIF, mit LT7680-Controllerboard (SPI -> RGB, RA8876-aehnlicher Befehlssatz; LovyanGFX unterstuetzt ihn vermutlich nicht direkt, BuyDisplay-Beispielcode als Basis)
-- MCP23017 (SO-28) als I/O-Expander fuer die Tastaturmatrix, I2C-Adresse 0x20
 - LiPo 3,7 V 300 mAh, 40x30x3 mm, an BAT-Pads des XIAO
 - Kupferlackdraht 0,1 mm zum Anzapfen der Tastaturpads
+
+## Noch zu bestellen
+
+- MCP23017 als I/O-Expander fuer die Tastaturmatrix, I2C-Adresse 0x20: 2x MCP23017-E/SO (SO-28)
+  + 2x SOIC-28-auf-DIP-Adapter. Zweiter Chip als Reserve oder fuer >16 Matrixleitungen (Adresse 0x21).
+  Nicht die SSOP-Variante (-E/SS), die ist kaum von Hand zu loeten.
+- Mini-Schiebeschalter in die Akku-Plusleitung (XIAO hat keinen Schalter)
+- Silikonlitze 28-30 AWG, Steckbrett + Jumperkabel
+- Reserve: 4,7 kOhm (I2C), 100 nF (VDD des MCP23017), 1N4148/BAT54 (Matrix), Kapton-Band
+- Offen: Versorgung des LT7680-Boards im Datenblatt pruefen; bei 5 V Step-up 3,7 -> 5 V noetig
 
 ## Entscheidungen
 

@@ -1,6 +1,6 @@
 # Casio-Deck
 
-Umbau eines alten Casio fx-991 zum Cyberdeck: Ein XIAO ESP32S3 ersetzt den Casio-Chip,
+Umbau eines Casio fx-991DE CW (ClassWiz) zum Cyberdeck: Ein XIAO ESP32S3 ersetzt den Casio-Chip,
 ein IPS-Panel ersetzt das LCD, Gehaeuse und Tastatur bleiben. Ueber den Handy-Hotspot
 spricht der Rechner mit einer Bridge in Termux, die Claude Code (`claude -p`) aufruft.
 
@@ -39,6 +39,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - Bridge nutzt `claude -p --output-format stream-json`, nicht pexpect auf die TUI.
 - Akku: mit WLAN grob 1-2 h Terminalbetrieb; WLAN/Kamera aus, wenn nicht gebraucht.
 - Gehaeuse: keine neuen Loecher ausser fuer die Kamera (Kameraloch dient auch als Schallweg fuers Mikro).
+  Die Kamera darf hinten etwas herausschauen (Rueckkamera). Dann zaehlt fuer die Bauhoehe nur
+  XIAO + Sense-Platine ohne Kamera; die Mappe braucht eine Aussparung fuer den Buckel, damit der
+  Rechner flach auf der Qi-Spule liegt. Kamera oben, Qi-Spule weiter unten an der Rueckwand.
   Kein Batteriefach vorhanden. Laden per Qi: Empfaengerspule innen an der Rueckwand (Ferrit zur
   Elektronik hin, kein Metall/Kupfer zwischen den Spulen). Sender + Powerbank in der mitgelieferten
   Safe-Case-Mappe (Rechner liegt mit der Rueckseite darin). USB-C des XIAO ist nach dem Einbau
@@ -57,7 +60,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 
 ## Offen
 
-1. Tastaturmatrix des fx-991 ausmessen (Modell noch unklar), Zeilen/Spalten dokumentieren.
+1. Tastaturmatrix des fx-991DE CW ausmessen, Zeilen/Spalten dokumentieren. Die CW-Tasten heissen
+   teils anders als die logischen Tasten der Firmware (K_MODE, K_ALPHA, ...); Zuordnung beim Ausmessen.
 2. ~~Firmware-Grundgeruest~~ steht inkl. ALPHA-Mehrfachtippen (kompiliert, im Simulator getestet, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt.
 3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.

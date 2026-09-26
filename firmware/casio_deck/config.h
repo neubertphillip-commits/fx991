@@ -67,6 +67,13 @@ constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
 constexpr uint32_t WIFI_IDLE_OFF_MS = 60000;
 
 // ---------------------------------------------------------------------------
+// Strom und Updates
+// ---------------------------------------------------------------------------
+constexpr uint32_t AUTO_OFF_MS = 10UL * 60 * 1000;  // ohne Eingabe nach 10 min aus
+constexpr uint32_t WATCHDOG_S = 30;                 // haengt loop() laenger: Neustart
+#define OTA_HOSTNAME "casio-deck"                   // -> casio-deck.local
+
+// ---------------------------------------------------------------------------
 // Kamera (OV3660). Makros, weil die Typen aus esp_camera.h kommen.
 // SVGA 800x600 reicht Claude zum Erkennen und gibt ~30-60 kB JPEG.
 // ---------------------------------------------------------------------------

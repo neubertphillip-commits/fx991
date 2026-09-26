@@ -22,7 +22,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - ~~Mini-Schiebeschalter~~ entfaellt (keine Loecher): Ausschalten per Software statt Schalter
 - Qi-Empfaenger (5 V, flach, Spule ~30-40 mm, Datenblatt: Dicke) an 5V-Pin des XIAO, davor
   Schottky-Diode (z.B. SS14) gegen Rueckspeisung, falls USB gleichzeitig steckt
-- Qi-Sender (5 V ueber USB-C) fuer den Einbau ins Etui
+- Fuer die Safe-Case-Mappe (Lade-Etui, darf Oeffnungen/Schalter haben): Qi-Sender 5 V,
+  flacher LiPo (~1000-2000 mAh, Dicke nach Platz), Lade-/Boost-Modul mit USB-C (Powerbank-Modul),
+  Schalter oder Reed-Kontakt + Magnet, damit der Sender nur bei geschlossener Mappe laeuft
 - Vorschlag, offen: 2x 100 kOhm als Spannungsteiler fuer eine Akkuanzeige (an D3 statt LT7680-WAIT)
 - Silikonlitze 28-30 AWG, Steckbrett + Jumperkabel
 - Reserve: 4,7 kOhm (I2C), 100 nF (VDD des MCP23017), 1N4148/BAT54 (Matrix), Kapton-Band
@@ -38,8 +40,10 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - Akku: mit WLAN grob 1-2 h Terminalbetrieb; WLAN/Kamera aus, wenn nicht gebraucht.
 - Gehaeuse: keine neuen Loecher ausser fuer die Kamera (Kameraloch dient auch als Schallweg fuers Mikro).
   Kein Batteriefach vorhanden. Laden per Qi: Empfaengerspule innen an der Rueckwand (Ferrit zur
-  Elektronik hin, kein Metall/Kupfer zwischen den Spulen), Qi-Sender im Etui. USB-C des XIAO
-  ist nach dem Einbau nicht erreichbar -> Firmware-Updates per WLAN (OTA).
+  Elektronik hin, kein Metall/Kupfer zwischen den Spulen). Sender + Powerbank in der mitgelieferten
+  Safe-Case-Mappe (Rechner liegt mit der Rueckseite darin). USB-C des XIAO ist nach dem Einbau
+  nicht erreichbar -> Firmware-Updates per WLAN (OTA) mit automatischem Rollback.
+- Aus = Tiefschlaf (SHIFT+AC oder 10 min), Wecken per Taste ueber INTA (D0, RTC-faehig). Watchdog 30 s.
 - Spracheingabe: PDM-Mikro der Sense-Platine -> WAV als Binaer-Frame -> Bridge wandelt per `--stt`
   (whisper.cpp) in Text. `claude -p` nimmt kein Audio. Optional: ohne `--stt` laeuft alles andere normal.
 
@@ -58,6 +62,6 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.
 5. ~~Spracheingabe~~ geschrieben (Simulator + Bridge getestet, whisper.cpp in Termux und Mikro ungetestet).
-6. Einbau ohne Loecher: Qi-Laden (s. Entscheidungen), OTA-Update, Ausschalten per Software (Deep Sleep,
-   Wecken per Taste; noch Vorschlag). Gehaeuse-Innenmasse messen (Hoehe XIAO+Sense ~15 mm!),
-   Platz fuer Qi-Spule + Akku an der Rueckwand, Etui-Art klaeren (Casio-Schiebedeckel oder Tasche).
+6. Einbau ohne Loecher: OTA, Watchdog, Tiefschlaf sind geschrieben (kompiliert, Simulator getestet).
+   Offen: Gehaeuse-Innenmasse (Hoehe XIAO+Sense ~15 mm!), Platz fuer Qi-Spule + Akku an der
+   Rueckwand, Abstand Spule-Mappe (< ~5 mm), Ruhestrom im Tiefschlaf und des Qi-Senders messen.

@@ -14,6 +14,7 @@
 #define INPUT 0
 #define OUTPUT 1
 #define INPUT_PULLUP 2
+#define RTC_DATA_ATTR  // Simulator: kein Tiefschlaf-RAM noetig
 
 uint32_t millis();
 void delay(uint32_t ms);

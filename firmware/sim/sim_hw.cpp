@@ -10,6 +10,8 @@
 #include "../casio_deck/camera.h"
 #include "../casio_deck/keypad.h"
 #include "../casio_deck/mic.h"
+#include "../casio_deck/ota.h"
+#include "../casio_deck/power.h"
 #include "Arduino.h"
 #include "WiFi.h"
 #include "sim.h"
@@ -75,7 +77,27 @@ namespace keypad {
 bool begin() { return true; }
 bool poll(KeyEvent&) { return false; }
 bool active() { return false; }
+bool armWake() { return true; }
 }  // namespace keypad
+
+// ---------------------------------------------------------------------------
+// Updates gibt es im Simulator nicht; "Aus" wartet auf eine Taste
+// ---------------------------------------------------------------------------
+
+namespace ota {
+void begin(Notify) {}
+void loop() {}
+bool ready() { return false; }
+bool running() { return false; }
+}  // namespace ota
+
+namespace power {
+void begin() {}
+bool wokeByKey() { return false; }
+bool updatePending() { return false; }
+void confirmUpdate() {}
+void sleep() { sim::waitForWake(); }
+}  // namespace power
 
 // ---------------------------------------------------------------------------
 // Kamera: liefert die Datei aus --cam

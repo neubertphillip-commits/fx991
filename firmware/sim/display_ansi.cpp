@@ -92,6 +92,15 @@ namespace display {
 
 void begin() {}
 
+void power(bool on) {
+  if (on) {
+    shown = nullptr;  // alles neu zeichnen
+    return;
+  }
+  printf("\x1b[H\x1b[2J\n  Casio-Deck ist aus (Tiefschlaf).\n\n  Beliebige Taste weckt ihn.\n");
+  fflush(stdout);
+}
+
 void render(const Screen& s) {
   if (&s == shown && s.version() == shownVersion && sim::uiVersion == shownUi) return;
   shown = &s;
@@ -121,7 +130,7 @@ void render(const Screen& s) {
   out += "│" + inputLine(s) + "│" + EOL;
   out += "└" + repeat("─", W) + "┘" + EOL;
   out += std::string(DIM) +
-         "Tab MODE  Enter EXE  Esc AC  Bksp DEL  s SHIFT  a ALPHA  ↑↓ blaettern" + EOL +
+         "Tab MODE  Enter EXE  Esc AC  Bksp DEL  s SHIFT  a ALPHA  s+Esc aus  ↑↓ blaettern" + EOL +
          "x EXP  n Ans  w sqrt  i sin  o cos  t tan  l ln  g log  v Sprache  : Befehl  \" Text" +
          OFF + EOL;
 

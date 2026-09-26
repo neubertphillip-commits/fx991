@@ -2,7 +2,7 @@
 
 Arduino/C++ fuer den Seeed XIAO ESP32S3 Sense: Zustandsautomat (Rechner / Terminal /
 Kamera), WLAN, WebSocket-Client zur Bridge, MCP23017-Tastaturscan, Texteingabe per
-Mehrfachtippen, Spracheingabe, Kamera (OV3660). Das Display ist noch nicht angeschlossen; der
+Mehrfachtippen, Spracheingabe, Kamera (OV3660), Ein/Aus per Tiefschlaf und Updates per WLAN. Das Display ist noch nicht angeschlossen; der
 Bildschirminhalt wird bis dahin auf dem seriellen Monitor ausgegeben.
 
 Ohne jede Hardware laesst sich alles im [PC-Simulator](#pc-simulator) ausprobieren.
@@ -26,7 +26,34 @@ pio run -t upload && pio device monitor
 Board *XIAO_ESP32S3*, PSRAM *OPI PSRAM*. Bibliotheken: *WebSockets* (Markus Sattler)
 und *ArduinoJson* (Benoit Blanchon). Getestet mit Core 3.3.12.
 
-**Host-Tests** (Rechner, Textpuffer, Mehrfachtippen): `cd hosttest && make`
+**Host-Tests** (Rechner, Textpuffer, Mehrfachtippen, WAV): `cd hosttest && make`
+
+## Update per WLAN (OTA)
+
+Nach dem Einbau ist der USB-C-Anschluss nicht mehr erreichbar. Die erste Firmware
+kommt per USB drauf, danach geht es per WLAN:
+
+1. Rechner in den Terminalmodus schalten (WLAN geht an), Laptop in denselben Hotspot.
+2. `CASIO_OTA_PASSWORD=<OTA_PASSWORD aus secrets.h> pio run -e xiao_esp32s3_ota -t upload`
+   (Arduino-IDE: Netzwerk-Port `casio-deck` waehlen, Passwort eingeben.)
+3. Der Rechner zeigt "Update laeuft", startet neu und meldet "Neue Firmware bestaetigt".
+
+**Absicherung:** Eine neue Firmware gilt erst als gut, wenn sie nach dem Neustart wieder
+ins WLAN kommt und selbst Updates annehmen kann. Stuerzt sie vorher ab oder startet neu
+(auch durch den Watchdog nach 30 s Haenger), laedt der Bootloader automatisch die vorige
+Firmware. Solange sie unbestaetigt ist, laesst sich der Rechner nicht ausschalten.
+Nur eine Firmware, die laeuft und WLAN kann, aber das Update-Modul kaputt hat, wuerde
+das Oeffnen des Gehaeuses erfordern.
+
+## Ein/Aus
+
+Kein Schalter: SHIFT+AC schaltet aus (wie beim Casio), ebenso 10 min ohne Eingabe
+(`AUTO_OFF_MS`). Aus heisst Tiefschlaf; der MCP23017 bleibt versorgt, jede Taste zieht
+INTA auf LOW und weckt den ESP32. Die Wecktaste wird nicht als Eingabe gewertet. Modus,
+Ans und DEG/RAD bleiben erhalten, der Bildschirminhalt nicht. Nicht ausgeschaltet wird,
+solange eine Anfrage oder Aufnahme laeuft, ein Update laeuft/unbestaetigt ist oder der
+MCP23017 fehlt (dann koennte nichts wecken). Der Stromverbrauch im Tiefschlaf (Kamera,
+LT7680-Board) ist noch zu messen.
 
 ## PC-Simulator
 
@@ -71,6 +98,9 @@ freien Text (wird wie vom seriellen Monitor eingegeben). Strg-C beendet.
 | `camera.cpp` | OV3660: an/aus, JPEG aufnehmen |
 | `mic.cpp` | PDM-Mikrofon: Aufnahme in den PSRAM (eigener Task) |
 | `wav.cpp` | WAV-Header, Verstaerkung |
+| `power.cpp` | Tiefschlaf/Wecken, Watchdog, Bestaetigung neuer Firmware |
+| `ota.cpp` | Update per WLAN (ArduinoOTA) |
+| `credentials.h` | bindet `secrets.h` ein (WLAN, Bridge, OTA-Passwort) |
 | `net.cpp` | WLAN an/aus, WebSocket, JSON-Protokoll der Bridge |
 | `screen.cpp` | Textpuffer 60x40: Status, Scrollback, Eingabezeile (UTF-8) |
 | `display_serial.cpp` | Display-Ersatz: gibt den Screen seriell aus |
@@ -101,6 +131,7 @@ MCP23017: A0-A2 an GND (0x20), RESET an 3V3.
 | DEL | letztes Zeichen | letztes Zeichen | |
 | UP/DOWN | blaettern, mit SHIFT seitenweise | wie Rechner | wie Rechner |
 | SHIFT+MODE | DEG/RAD | | |
+| SHIFT+AC | ausschalten | ausschalten | ausschalten |
 | ALPHA | Ziffern/Buchstaben umschalten | wie Rechner | wie Rechner |
 | SHIFT+ALPHA | | Spracheingabe | Spracheingabe (Frage zum Foto) |
 
@@ -147,7 +178,7 @@ Jede Zeile wird im aktuellen Modus eingegeben und mit EXE abgeschickt, so laesst
 alles ohne Tastatur testen. Befehle: `:calc` `:term` `:cam` (Modus), `:keys`
 (alle Tastenereignisse protokollieren), `:wifi` (an/aus), `:new`, `:ping`,
 `:key NAME` (Taste druecken, z.B. `:key EXE`, `:key sin`), `:rec` (Spracheingabe
-starten/abschicken), `:help`.
+starten/abschicken), `:off` (ausschalten), `:help`.
 
 ## Tastaturmatrix ausmessen
 
@@ -169,4 +200,5 @@ Zeilen bleiben.
 - Kamera auf echter Hardware testen (Ausrichtung `CAM_VFLIP`/`CAM_HMIRROR`)
 - Mikrofon auf echter Hardware testen (`MIC_GAIN`, Schall durchs Gehaeuse)
 - Cursor in der Eingabezeile (LEFT/RIGHT zum Editieren)
-- Light-Sleep mit INTA als Wakeup, CPU-Takt reduzieren
+- Stromverbrauch im Tiefschlaf messen; Display/Kamera ggf. hart abschalten
+- CPU-Takt reduzieren, Light-Sleep im Rechnermodus

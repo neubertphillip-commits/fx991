@@ -20,4 +20,7 @@ extern const char* cameraImage;
 // WAV-Datei, die das simulierte Mikrofon "aufnimmt" (nullptr = keine).
 extern const char* micFile;
 
+// "Tiefschlaf": blockiert bis zum naechsten Tastendruck (oder Strg-C).
+void waitForWake();
+
 }  // namespace sim

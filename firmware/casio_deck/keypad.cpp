@@ -190,4 +190,11 @@ bool poll(KeyEvent& ev) {
 
 bool active() { return scanning; }
 
+bool armWake() {
+  if (!present) return false;
+  enterIdle();
+  uint16_t gpio;
+  return read16(REG_GPIO, gpio) && (gpio & COL_MASK) == COL_MASK;
+}
+
 }  // namespace keypad

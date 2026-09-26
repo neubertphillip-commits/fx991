@@ -6,15 +6,9 @@
 #include <WiFi.h>
 
 #include "config.h"
+#include "credentials.h"
 #include "screen.h"
 
-// WLAN-Zugangsdaten und Bridge-Adresse (nicht im Repo)
-#if __has_include("secrets.h")
-#include "secrets.h"
-#else
-#warning "secrets.h fehlt: secrets.example.h nach secrets.h kopieren und anpassen"
-#include "secrets.example.h"
-#endif
 
 namespace {
 

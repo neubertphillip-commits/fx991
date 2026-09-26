@@ -153,6 +153,13 @@ void usage(const char* prog) {
 
 const char* sim::lineEdit() { return editing ? editBuf.c_str() : nullptr; }
 
+void sim::waitForWake() {
+  while (!quit && readByte(200) < 0) {
+  }
+  while (readByte(20) >= 0) {
+  }  // Rest der Taste (z.B. Escape-Folge) verwerfen, die Wecktaste zaehlt nicht
+}
+
 int main(int argc, char** argv) {
   const char* host = "127.0.0.1";
   int port = 8765;

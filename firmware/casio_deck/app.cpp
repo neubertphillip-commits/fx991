@@ -12,6 +12,8 @@
 #include "mic.h"
 #include "multitap.h"
 #include "net.h"
+#include "ota.h"
+#include "power.h"
 #include "screen.h"
 
 namespace {
@@ -21,14 +23,16 @@ namespace {
 // Spracheingabe (Terminal/Kamera): SHIFT+ALPHA startet, EXE oder SHIFT+ALPHA schickt,
 // AC verwirft; die Bridge schickt den erkannten Text zurueck in die Eingabezeile.
 // MODE wechselt reihum; auf dem seriellen Monitor auch :calc, :term, :cam.
+// SHIFT+AC schaltet aus (Tiefschlaf), eine beliebige Taste wieder ein.
 enum class Mode : uint8_t { Calc, Terminal, Camera };
 constexpr uint8_t MODE_COUNT = 3;
 const char* const MODE_NAMES[MODE_COUNT] = {"RECHNER", "TERMINAL", "KAMERA"};
 
-Mode mode = Mode::Calc;
+// RTC_DATA_ATTR: bleibt im Tiefschlaf erhalten (nicht bei leerem Akku)
+RTC_DATA_ATTR Mode mode = Mode::Calc;
 Screen screens[MODE_COUNT];
 // ALPHA-Zustand je Modus: im Terminal und bei der Kamera-Frage meist Text.
-bool alpha[MODE_COUNT] = {false, true, true};
+RTC_DATA_ATTR bool alpha[MODE_COUNT] = {false, true, true};
 
 bool keypadOk = false;
 bool logKeys = false;  // alle Tastenereignisse seriell ausgeben
@@ -36,8 +40,8 @@ bool shift = false;
 MultiTap multitap;
 
 // Rechner
-double ans = 0;
-bool degrees = true;
+RTC_DATA_ATTR double ans = 0;
+RTC_DATA_ATTR bool degrees = true;
 uint32_t calcSince = 0;  // seit wann im Rechnermodus (WLAN-Abschaltung)
 
 // Bridge
@@ -48,6 +52,11 @@ char pending[Screen::INPUT_BYTES] = "";  // Prompt, der auf die Verbindung warte
 // Spracheingabe
 bool voiceActive = false;  // Aufnahme laeuft (aus Sicht der App)
 bool voiceSend = false;    // erkannten Text nach "done" abschicken (VOICE_AUTO_SEND)
+
+// Ein/Aus
+uint32_t lastActivity = 0;  // letzte Eingabe, fuer AUTO_OFF_MS
+bool offRequested = false;  // ausschalten, sobald alle Tasten losgelassen sind
+bool ignoreKeys = false;    // Taste, die aus dem Tiefschlaf geweckt hat, nicht auswerten
 
 char serialBuf[Screen::INPUT_BYTES];
 size_t serialLen = 0;
@@ -106,6 +115,7 @@ void submit();
 
 void onBridge(const char* type, const char* text) {
   Screen& s = screen(replyTo);
+  lastActivity = millis();
   if (!strcmp(type, "busy")) {
     busy = true;
   } else if (!strcmp(type, "line")) {
@@ -279,6 +289,44 @@ void submit() {
 // Tasten
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Ein/Aus
+// ---------------------------------------------------------------------------
+
+// Grund, warum gerade nicht ausgeschaltet werden darf, sonst nullptr.
+const char* cannotSleep() {
+  if (!keypadOk) return "(ohne Tastatur kein Ausschalten, nichts koennte wecken)";
+  if (power::updatePending()) return "(neue Firmware erst bestaetigen: WLAN verbinden)";
+  if (ota::running()) return "(Update laeuft)";
+  return nullptr;
+}
+
+void requestOff() {
+  if (const char* why = cannotSleep()) {
+    screen().print(why);
+    return;
+  }
+  offRequested = true;  // erst ausschalten, wenn AC losgelassen ist, sonst weckt es sofort
+}
+
+void sleepNow() {
+  offRequested = false;
+  if (voiceActive) voiceCancel();
+  camera::end();
+  net::enable(false);
+  if (!keypad::armWake()) {  // doch noch eine Taste gedrueckt: gleich nochmal versuchen
+    offRequested = true;
+    return;
+  }
+  display::power(false);
+  power::sleep();  // Hardware: kehrt nicht zurueck, Aufwachen = Neustart
+
+  // nur im PC-Simulator: weiter wie nach dem Aufwachen
+  display::power(true);
+  lastActivity = millis();
+  setMode(mode);
+}
+
 // Text, den eine Taste in die Eingabezeile schreibt, sonst nullptr.
 const char* keyText(Key k, bool shifted) {
   switch (k) {
@@ -350,7 +398,9 @@ void onKey(Key k) {
     case K_EXE: submit(); break;
     case K_DEL: s.inputBackspace(); break;
     case K_AC:
-      if (s.input()[0]) {
+      if (wasShift) {
+        requestOff();  // SHIFT+AC = aus, wie beim Casio
+      } else if (s.input()[0]) {
         s.inputClear();
       } else if (mode == Mode::Terminal && net::sendNew()) {
         s.print("-- neue Sitzung --");
@@ -384,8 +434,11 @@ void pollKeys() {
       Serial.printf("Spalte %u (%s) -> %s\n", ev.col, mcpPinName(KEY_COL_PINS[ev.col]),
                     k == K_NONE ? "unbelegt" : keyName(k));
     }
+    if (ignoreKeys) continue;
+    lastActivity = millis();
     if (ev.pressed && k != K_NONE) onKey(k);
   }
+  if (ignoreKeys && !keypad::active()) ignoreKeys = false;  // Wecktaste losgelassen
 }
 
 // ---------------------------------------------------------------------------
@@ -411,6 +464,8 @@ void serialCommand(const char* cmd) {
   else if (!strcmp(cmd, "ping")) {
     replyTo = mode;
     if (!net::sendPing()) Serial.println("[app] Bridge nicht verbunden");
+  } else if (!strcmp(cmd, "off")) {
+    requestOff();
   } else if (!strcmp(cmd, "rec")) {
     if (voiceActive) voiceFinish();
     else voiceStart();
@@ -421,7 +476,7 @@ void serialCommand(const char* cmd) {
   } else {
     Serial.println("Befehle: :calc :term :cam  :keys (Tastenprotokoll)  :wifi (an/aus)");
     Serial.println("         :new (neue Claude-Sitzung)  :ping  :key NAME (Taste druecken)");
-    Serial.println("         :rec (Spracheingabe starten/abschicken)");
+    Serial.println("         :rec (Spracheingabe starten/abschicken)  :off (ausschalten)");
     Serial.println("Jede andere Zeile wird im aktuellen Modus eingegeben und abgeschickt.");
   }
 }
@@ -436,6 +491,7 @@ void pollSerial() {
     }
     serialBuf[serialLen] = '\0';
     serialLen = 0;
+    lastActivity = millis();
     if (serialBuf[0] == ':') {
       serialCommand(serialBuf + 1);
     } else if (serialBuf[0]) {
@@ -450,25 +506,47 @@ void pollSerial() {
 
 namespace app {
 
+void onOta(const char* message) {
+  screen().print(message);
+  display::render(screen());  // sofort zeigen, das Update blockiert loop()
+}
+
 void begin() {
+  power::begin();
   Serial.begin(115200);
   display::begin();
-  delay(500);
-  Serial.println("\nCasio-Deck startet");
+  bool woke = power::wokeByKey();
+  if (!woke) delay(500);  // Zeit fuer den seriellen Monitor, nur beim Kaltstart
+  Serial.println(woke ? "\nCasio-Deck wacht auf" : "\nCasio-Deck startet");
 
   keypadOk = keypad::begin();
   if (!keypadOk) Serial.printf("[key] MCP23017 an 0x%02X antwortet nicht\n", MCP_ADDR);
+  ignoreKeys = woke;
 
   net::begin(onBridge);
-  setMode(Mode::Calc);
-  screen(Mode::Calc).print("Casio-Deck bereit. MODE wechselt Rechner/Terminal/Kamera.");
-  screen(Mode::Calc).print("Serieller Monitor: ':help' fuer Befehle.");
+  ota::begin(onOta);
+  setMode(mode);  // nach dem Aufwachen im selben Modus weiter
+  lastActivity = millis();
+  if (!woke) {
+    screen(Mode::Calc).print("Casio-Deck bereit. MODE wechselt Rechner/Terminal/Kamera.");
+    screen(Mode::Calc).print("SHIFT+AC schaltet aus. Serieller Monitor: ':help'.");
+  }
+  if (power::updatePending()) {
+    // Neue Firmware gilt erst als gut, wenn sie wieder Updates annehmen kann
+    screen().print("Neue Firmware: wird bestaetigt, sobald das WLAN steht ...");
+    net::enable(true);
+  }
 }
 
 void loop() {
   pollKeys();
   pollSerial();
   net::loop();
+  ota::loop();
+  if (power::updatePending() && ota::ready()) {
+    power::confirmUpdate();
+    screen().print("Neue Firmware bestaetigt.");
+  }
   if (busy && net::state() != net::State::Online) {
     busy = false;  // Antwort kommt nicht mehr
     screen(replyTo).print("! Verbindung zur Bridge verloren");
@@ -477,10 +555,18 @@ void loop() {
   if (voiceActive && !mic::recording()) voiceFinish();  // Puffer voll
 
   // WLAN im Rechnermodus nach einer Weile abschalten (Akku)
-  if (mode == Mode::Calc && net::enabled() && !busy && !pending[0] &&
-      millis() - calcSince > WIFI_IDLE_OFF_MS) {
+  if (mode == Mode::Calc && net::enabled() && !busy && !pending[0] && !ota::running() &&
+      !power::updatePending() && millis() - calcSince > WIFI_IDLE_OFF_MS) {
     net::enable(false);
   }
+
+  // Ausschalten: auf Wunsch (SHIFT+AC) oder nach AUTO_OFF_MS ohne Eingabe
+  if (!offRequested && !busy && !voiceActive && !pending[0] &&
+      millis() - lastActivity > AUTO_OFF_MS &&
+      !cannotSleep()) {
+    offRequested = true;
+  }
+  if (offRequested && !keypad::active()) sleepNow();
 
   updateStatus();
   display::render(screen());

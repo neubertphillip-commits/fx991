@@ -572,6 +572,7 @@ void onOta(const char* message) {
 
 void begin() {
   power::begin();
+  setCpuFrequencyMhz(CPU_MHZ);
   Serial.begin(115200);
   display::begin();
   bool woke = power::wokeByKey();
@@ -597,9 +598,19 @@ void begin() {
   }
 }
 
+// Leichtschlaf nur, wenn nichts laeuft, das der Schlaf stoeren oder verzoegern wuerde.
+bool canNap() {
+  uint32_t now = millis();
+  return IDLE_LIGHT_SLEEP && keypadOk && !keypad::active() && !net::enabled() && !busy &&
+         !voiceActive && outbox.kind == Out::None && !offRequested && !camera::isOn() &&
+         !multitap.pending(now) && !ota::running() && now - lastActivity > IDLE_NAP_AFTER_MS;
+}
+
 void loop() {
   pollKeys();
   pollSerial();
+  net::allowLowPower(busy && !ota::running() && !power::updatePending() &&
+                     static_cast<int32_t>(keepOnlineUntil - millis()) <= 0);
   net::loop();
   ota::loop();
   if (power::updatePending() && ota::ready()) {
@@ -613,8 +624,8 @@ void loop() {
   sendPending();
   if (voiceActive && !mic::recording()) voiceFinish();  // Puffer voll
 
-  // WLAN nur solange es gebraucht wird (Akku): nach der letzten Anfrage/Antwort
-  // noch WIFI_LINGER_MS fuer schnelle Rueckfragen, dann aus
+  // WLAN nur solange es gebraucht wird (Akku): nach der letzten Antwort noch
+  // WIFI_LINGER_MS fuer Nachzuegler der Bridge, dann aus
   bool netNeeded = busy || outbox.kind != Out::None || voiceActive || ota::running() ||
                    power::updatePending() || static_cast<int32_t>(keepOnlineUntil - millis()) > 0;
   if (net::enabled() && !netNeeded && millis() - lastNetUse > WIFI_LINGER_MS) {
@@ -632,8 +643,9 @@ void loop() {
   updateStatus();
   display::render(screen());
 
-  // Nicht dauerhaft mit 100 % CPU kreisen; waehrend eines Tastenscans kuerzer.
-  delay(keypad::active() ? 1 : 5);
+  // Nichts zu tun: bis zur naechsten Taste leicht schlafen. Sonst nicht dauerhaft
+  // mit 100 % CPU kreisen; waehrend eines Tastenscans kuerzer.
+  if (!(canNap() && power::nap(IDLE_NAP_MAX_MS))) delay(keypad::active() ? 1 : 5);
 }
 
 void injectKey(Key k) { onKey(k); }

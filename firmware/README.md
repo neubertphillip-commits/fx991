@@ -175,13 +175,35 @@ Das WLAN ist in allen Modi aus, solange nichts gesendet wird. EXE (Frage oder Fo
 eine Sprachaufnahme oder AC fuer eine neue Sitzung legen die Anfrage in einen
 Postausgang und schalten das WLAN ein; sobald die Bridge verbunden ist, geht sie raus.
 Das Foto wird sofort aufgenommen, nicht erst nach dem Verbinden; bei der Sprachaufnahme
-verbindet der Rechner schon waehrend des Sprechens. Nach der letzten Antwort bleibt das
-WLAN noch 30 s an (`WIFI_LINGER_MS`), fuer schnelle Rueckfragen, dann geht es aus.
-Kommt nach 45 s keine Verbindung zustande, wird die Anfrage verworfen (`NET_GIVEUP_MS`).
+verbindet der Rechner schon waehrend des Sprechens. Nach der Antwort bleibt das WLAN
+nur noch 3 s an (`WIFI_LINGER_MS`), dann geht es aus; eine Rueckfrage verbindet in etwa
+1 s neu. Kommt nach 45 s keine Verbindung zustande, wird die Anfrage verworfen
+(`NET_GIVEUP_MS`).
 
 Kanal und Zugangspunkt des Hotspots werden gemerkt (auch im Tiefschlaf), damit das
 Wiederverbinden ohne Kanalsuche geht. Klappt das nicht innerhalb von 3 s, sucht der
 Rechner normal. Die Claude-Sitzung haelt die Bridge, sie ueberlebt das Trennen.
+
+## Strom sparen
+
+Der Akku ist der Engpass, deshalb spart die Firmware auf mehreren Ebenen:
+
+- **CPU mit 80 MHz** statt 240 MHz (`CPU_MHZ`). Reicht fuer alles, auch fuer WLAN.
+- **Warten auf Claude:** Waehrend Claude denkt, schlaeft das Funkmodul und hoert nur
+  etwa jede Sekunde beim Hotspot nach, ob etwas angekommen ist (`WIFI_LISTEN_INTERVAL`,
+  in Beacons zu ~100 ms). Das ist sparsamer als die Verbindung jedes Mal neu aufzubauen,
+  und die Antwort kommt hoechstens ~1 s spaeter (gestreamte Zeilen in Schueben). Beim
+  Senden (Bild, Sprache) und 2 s danach laeuft der Funk mit vollem Tempo
+  (`WIFI_ACTIVE_MS`). Trennt der Hotspot im Wartemodus, `WIFI_LISTEN_INTERVAL` auf 3.
+- **Leerlauf:** Ist das WLAN aus und keine Taste gedrueckt, geht der ESP32 2 s nach der
+  letzten Eingabe in den Leichtschlaf; eine Taste (INTA) weckt ihn in ~1 ms, der Bildschirm
+  bleibt stehen (`IDLE_LIGHT_SLEEP`). Nicht bei angestecktem USB (sonst bricht der serielle
+  Monitor ab), nicht im Kameramodus. Braucht verdrahtetes INTA; ohne INTA ausschalten.
+- **Aus:** Tiefschlaf nach SHIFT+AC oder 10 min (siehe Ein/Aus).
+
+Groesster Verbraucher bleibt vermutlich die Hintergrundbeleuchtung des Displays; das
+Dimmen kommt mit dem LT7680-Treiber. Alle Werte sind Schaetzungen, bis am Geraet
+gemessen ist (Multimeter in die Akkuleitung).
 
 ## Serieller Monitor (115200 Baud)
 

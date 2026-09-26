@@ -27,6 +27,10 @@ void loop();
 
 void enable(bool on);
 bool enabled();
+
+// Sparsamer Wartemodus des Funkmoduls erlaubt (nur waehrend auf Claude gewartet wird,
+// nicht bei OTA-Updates, die sonst sehr langsam wuerden).
+void allowLowPower(bool allowed);
 State state();
 const char* stateName(State s);
 

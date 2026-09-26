@@ -18,6 +18,7 @@
 
 uint32_t millis();
 void delay(uint32_t ms);
+inline bool setCpuFrequencyMhz(uint32_t) { return true; }
 inline void pinMode(int, int) {}
 inline int digitalRead(int) { return HIGH; }
 

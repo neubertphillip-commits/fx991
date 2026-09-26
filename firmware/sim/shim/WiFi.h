@@ -7,6 +7,7 @@
 
 enum wl_status_t { WL_IDLE_STATUS = 0, WL_CONNECTED = 3, WL_DISCONNECTED = 6 };
 enum wifi_mode_t { WIFI_OFF = 0, WIFI_STA = 1 };
+enum wifi_ps_type_t { WIFI_PS_NONE, WIFI_PS_MIN_MODEM, WIFI_PS_MAX_MODEM };
 
 class SimIPAddress {
  public:
@@ -23,7 +24,9 @@ class SimWiFi {
     if (m == WIFI_OFF) begun_ = false;
   }
   void setSleep(bool) {}
-  void begin(const char*, const char*, int32_t = 0, const uint8_t* = nullptr) {
+  void setSleep(wifi_ps_type_t ps) { sleep_ = ps; }
+  wifi_ps_type_t getSleep() const { return sleep_; }
+  void begin(const char*, const char*, int32_t = 0, const uint8_t* = nullptr, bool = true) {
     begun_ = true;
     since_ = millis();
   }
@@ -40,6 +43,7 @@ class SimWiFi {
 
  private:
   bool begun_ = false;
+  wifi_ps_type_t sleep_ = WIFI_PS_MIN_MODEM;
   uint32_t since_ = 0;
 };
 

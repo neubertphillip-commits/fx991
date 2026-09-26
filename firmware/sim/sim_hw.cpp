@@ -97,6 +97,7 @@ bool wokeByKey() { return false; }
 bool updatePending() { return false; }
 void confirmUpdate() {}
 void sleep() { sim::waitForWake(); }
+bool nap(uint32_t) { return false; }
 }  // namespace power
 
 // ---------------------------------------------------------------------------

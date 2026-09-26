@@ -39,7 +39,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - Eine WebSocket-Verbindung in beide Richtungen statt UDP/TCP-Mix. Verschluesselung macht WPA2.
 - Bridge nutzt `claude -p --output-format stream-json`, nicht pexpect auf die TUI.
 - Akku: mit WLAN grob 1-2 h Terminalbetrieb; WLAN/Kamera aus, wenn nicht gebraucht.
-- WLAN nur bei Bedarf: an beim Senden (Postausgang), aus 30 s nach der letzten Antwort.
+- WLAN nur bei Bedarf: an beim Senden (Postausgang), aus 3 s nach der Antwort. Beim Warten
+  auf Claude Modem-Sleep mit Listen-Interval ~1 s statt Trennen und Pollen (Neuverbinden kostet
+  mehr). CPU 80 MHz, Leichtschlaf im Leerlauf (Wecken per INTA). Akku ist der Engpass.
   Kanal/BSSID im RTC-RAM fuer schnelles Wiederverbinden. SHIFT+MODE im Terminal/Kamera
   haelt es 5 min an (OTA-Update). Die Bridge haelt die Claude-Sitzung ueber Verbindungen hinweg.
 - Gehaeuse: keine neuen Loecher ausser fuer die Kamera (Kameraloch dient auch als Schallweg fuers Mikro).

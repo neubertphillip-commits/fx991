@@ -65,9 +65,17 @@ constexpr uint16_t BRIDGE_PORT = 8765;
 constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
 // Schnellverbindung mit gespeichertem Kanal/Zugangspunkt; klappt sie nicht, normale Suche.
 constexpr uint32_t WIFI_FAST_TIMEOUT_MS = 3000;
-// WLAN ist nur an, solange es gebraucht wird: Es geht beim Senden an und nach der
-// letzten Antwort (oder Aktion) nach WIFI_LINGER_MS wieder aus.
-constexpr uint32_t WIFI_LINGER_MS = 30000;
+// WLAN ist nur an, solange es gebraucht wird: Es geht beim Senden an und kurz nach der
+// Antwort wieder aus (Nachlauf fuer letzte Nachrichten der Bridge). Die naechste
+// Anfrage verbindet dank gespeichertem Kanal in etwa 1 s neu.
+constexpr uint32_t WIFI_LINGER_MS = 3000;
+// Beim Warten auf die Antwort schlaeft das Funkmodul und hoert nur jeden n-ten Beacon
+// des Hotspots (~100 ms Abstand) ab: 10 = etwa jede Sekunde. Der Hotspot puffert so
+// lange. Trennt der Hotspot die Verbindung oder laesst keine Anmeldung zu: 3 probieren.
+constexpr uint8_t WIFI_LISTEN_INTERVAL = 10;
+// Nach dem letzten Senden so lange mit vollem Tempo, damit Uploads (Bild, Sprache)
+// nicht auf die Schlafpausen warten; danach sparsamer Wartemodus.
+constexpr uint32_t WIFI_ACTIVE_MS = 2000;
 // Kommt keine Verbindung zur Bridge zustande, wird die Anfrage nach dieser Zeit verworfen.
 constexpr uint32_t NET_GIVEUP_MS = 45000;
 // SHIFT+MODE im Terminal/Kamera (oder ":ota"): WLAN so lange an, fuer Updates per WLAN.
@@ -78,6 +86,15 @@ constexpr uint32_t OTA_WINDOW_MS = 5UL * 60 * 1000;
 // ---------------------------------------------------------------------------
 constexpr uint32_t AUTO_OFF_MS = 10UL * 60 * 1000;  // ohne Eingabe nach 10 min aus
 constexpr uint32_t WATCHDOG_S = 30;                 // haengt loop() laenger: Neustart
+// 80 MHz reichen fuer Rechner, Terminal, WLAN, Kamera und Mikro und brauchen deutlich
+// weniger Strom als die 240 MHz des Cores (WLAN braucht mindestens 80).
+constexpr uint32_t CPU_MHZ = 80;
+// Leichtschlaf zwischen Tastendruecken, solange WLAN, Kamera und Mikro aus sind:
+// der ESP32 haelt an, eine Taste (INTA) oder der Timer weckt ihn in ~1 ms wieder.
+// Nicht bei angestecktem USB (serieller Monitor) und nur mit verdrahtetem INTA.
+constexpr bool IDLE_LIGHT_SLEEP = true;
+constexpr uint32_t IDLE_NAP_AFTER_MS = 2000;  // erst so lange nach der letzten Eingabe
+constexpr uint32_t IDLE_NAP_MAX_MS = 1000;    // laengstens am Stueck (fuer Auto-Aus)
 #define OTA_HOSTNAME "casio-deck"                   // -> casio-deck.local
 
 // ---------------------------------------------------------------------------

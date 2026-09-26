@@ -1,7 +1,9 @@
 #include "power.h"
 
 #include <Arduino.h>
+#include <driver/gpio.h>
 #include <driver/rtc_io.h>
+#include <driver/usb_serial_jtag.h>
 #include <esp_ota_ops.h>
 #include <esp_sleep.h>
 #include <esp_task_wdt.h>
@@ -57,6 +59,19 @@ void sleep() {
   rtc_gpio_pulldown_dis(pin);
   esp_sleep_enable_ext0_wakeup(pin, 0);
   esp_deep_sleep_start();
+}
+
+bool nap(uint32_t maxMs) {
+  // Leichtschlaf trennt die USB-Verbindung; mit angestecktem Kabel wach bleiben
+  if (usb_serial_jtag_is_connected()) return false;
+  gpio_num_t pin = static_cast<gpio_num_t>(PIN_MCP_INT);
+  gpio_wakeup_enable(pin, GPIO_INTR_LOW_LEVEL);
+  esp_sleep_enable_gpio_wakeup();
+  esp_sleep_enable_timer_wakeup(static_cast<uint64_t>(maxMs) * 1000);
+  esp_light_sleep_start();
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+  gpio_wakeup_disable(pin);
+  return true;
 }
 
 }  // namespace power

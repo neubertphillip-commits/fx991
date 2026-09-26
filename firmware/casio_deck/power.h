@@ -26,4 +26,8 @@ void confirmUpdate();
 // (Aufwachen = Neustart); im PC-Simulator kehrt es nach einem Tastendruck zurueck.
 void sleep();
 
+// Leichtschlaf fuer hoechstens maxMs, eine Taste (INTA) weckt frueher. RAM, Anzeige
+// und Uhr (millis) laufen weiter. false, wenn nicht geschlafen wurde (USB angesteckt).
+bool nap(uint32_t maxMs);
+
 }  // namespace power

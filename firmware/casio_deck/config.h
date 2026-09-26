@@ -63,8 +63,15 @@ constexpr uint8_t SCREEN_ROWS = 40;
 // ---------------------------------------------------------------------------
 constexpr uint16_t BRIDGE_PORT = 8765;
 constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
-// WLAN wird im Rechnermodus nach dieser Zeit abgeschaltet (Akku).
-constexpr uint32_t WIFI_IDLE_OFF_MS = 60000;
+// Schnellverbindung mit gespeichertem Kanal/Zugangspunkt; klappt sie nicht, normale Suche.
+constexpr uint32_t WIFI_FAST_TIMEOUT_MS = 3000;
+// WLAN ist nur an, solange es gebraucht wird: Es geht beim Senden an und nach der
+// letzten Antwort (oder Aktion) nach WIFI_LINGER_MS wieder aus.
+constexpr uint32_t WIFI_LINGER_MS = 30000;
+// Kommt keine Verbindung zur Bridge zustande, wird die Anfrage nach dieser Zeit verworfen.
+constexpr uint32_t NET_GIVEUP_MS = 45000;
+// SHIFT+MODE im Terminal/Kamera (oder ":ota"): WLAN so lange an, fuer Updates per WLAN.
+constexpr uint32_t OTA_WINDOW_MS = 5UL * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Strom und Updates

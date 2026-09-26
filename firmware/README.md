@@ -33,7 +33,8 @@ und *ArduinoJson* (Benoit Blanchon). Getestet mit Core 3.3.12.
 Nach dem Einbau ist der USB-C-Anschluss nicht mehr erreichbar. Die erste Firmware
 kommt per USB drauf, danach geht es per WLAN:
 
-1. Rechner in den Terminalmodus schalten (WLAN geht an), Laptop in denselben Hotspot.
+1. Im Terminal- oder Kameramodus SHIFT+MODE druecken: das WLAN bleibt 5 min an.
+   Laptop in denselben Hotspot.
 2. `CASIO_OTA_PASSWORD=<OTA_PASSWORD aus secrets.h> pio run -e xiao_esp32s3_ota -t upload`
    (Arduino-IDE: Netzwerk-Port `casio-deck` waehlen, Passwort eingeben.)
 3. Der Rechner zeigt "Update laeuft", startet neu und meldet "Neue Firmware bestaetigt".
@@ -130,7 +131,7 @@ MCP23017: A0-A2 an GND (0x20), RESET an 3V3.
 | AC | Eingabe loeschen | Eingabe loeschen, bei leerer Eingabe neue Sitzung | |
 | DEL | letztes Zeichen | letztes Zeichen | |
 | UP/DOWN | blaettern, mit SHIFT seitenweise | wie Rechner | wie Rechner |
-| SHIFT+MODE | DEG/RAD | | |
+| SHIFT+MODE | DEG/RAD | WLAN 5 min an (Update) | WLAN 5 min an (Update) |
 | SHIFT+AC | ausschalten | ausschalten | ausschalten |
 | ALPHA | Ziffern/Buchstaben umschalten | wie Rechner | wie Rechner |
 | SHIFT+ALPHA | | Spracheingabe | Spracheingabe (Frage zum Foto) |
@@ -168,17 +169,27 @@ ein Foto (SVGA, JPEG) auf, schickt es als Binaer-Frame an die Bridge und danach 
 Eingabe als Frage; ohne Eingabe beschreibt Claude das Bild. Aufloesung, Qualitaet und
 Spiegelung stehen in `config.h` (`CAM_*`).
 
-WLAN geht beim Wechsel in Terminal oder Kamera an und im Rechnermodus nach 60 s
-wieder aus. Ein Prompt, der vor dem Verbindungsaufbau abgeschickt wird, wartet und
-geht raus, sobald die Bridge verbunden ist.
+## WLAN nur bei Bedarf
+
+Das WLAN ist in allen Modi aus, solange nichts gesendet wird. EXE (Frage oder Foto),
+eine Sprachaufnahme oder AC fuer eine neue Sitzung legen die Anfrage in einen
+Postausgang und schalten das WLAN ein; sobald die Bridge verbunden ist, geht sie raus.
+Das Foto wird sofort aufgenommen, nicht erst nach dem Verbinden; bei der Sprachaufnahme
+verbindet der Rechner schon waehrend des Sprechens. Nach der letzten Antwort bleibt das
+WLAN noch 30 s an (`WIFI_LINGER_MS`), fuer schnelle Rueckfragen, dann geht es aus.
+Kommt nach 45 s keine Verbindung zustande, wird die Anfrage verworfen (`NET_GIVEUP_MS`).
+
+Kanal und Zugangspunkt des Hotspots werden gemerkt (auch im Tiefschlaf), damit das
+Wiederverbinden ohne Kanalsuche geht. Klappt das nicht innerhalb von 3 s, sucht der
+Rechner normal. Die Claude-Sitzung haelt die Bridge, sie ueberlebt das Trennen.
 
 ## Serieller Monitor (115200 Baud)
 
 Jede Zeile wird im aktuellen Modus eingegeben und mit EXE abgeschickt, so laesst sich
 alles ohne Tastatur testen. Befehle: `:calc` `:term` `:cam` (Modus), `:keys`
-(alle Tastenereignisse protokollieren), `:wifi` (an/aus), `:new`, `:ping`,
+(alle Tastenereignisse protokollieren), `:new`, `:ping`,
 `:key NAME` (Taste druecken, z.B. `:key EXE`, `:key sin`), `:rec` (Spracheingabe
-starten/abschicken), `:off` (ausschalten), `:help`.
+starten/abschicken), `:ota` (WLAN 5 min an), `:off` (ausschalten), `:help`.
 
 ## Tastaturmatrix ausmessen
 

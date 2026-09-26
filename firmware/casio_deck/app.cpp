@@ -4,6 +4,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <vector>
+
 #include "calc.h"
 #include "camera.h"
 #include "config.h"
@@ -42,12 +44,23 @@ MultiTap multitap;
 // Rechner
 RTC_DATA_ATTR double ans = 0;
 RTC_DATA_ATTR bool degrees = true;
-uint32_t calcSince = 0;  // seit wann im Rechnermodus (WLAN-Abschaltung)
 
 // Bridge
 bool busy = false;                       // Anfrage laeuft
 Mode replyTo = Mode::Terminal;           // wohin die Antwort geschrieben wird
-char pending[Screen::INPUT_BYTES] = "";  // Prompt, der auf die Verbindung wartet
+
+// WLAN ist nur an, wenn es gebraucht wird. Anfragen landen im Postausgang, das WLAN
+// geht an, und sobald die Bridge verbunden ist, wird gesendet.
+enum class Out : uint8_t { None, Prompt, Image, Audio, NewSession };
+struct Outbox {
+  Out kind = Out::None;
+  Mode replyTo = Mode::Terminal;
+  char text[Screen::INPUT_BYTES] = "";  // Frage (auch zum Foto)
+  std::vector<uint8_t> image;           // Kopie des JPEG; die Kamera darf inzwischen aus
+  uint32_t since = 0;
+} outbox;
+uint32_t lastNetUse = 0;       // letzte Anfrage oder Antwort, fuer WIFI_LINGER_MS
+uint32_t keepOnlineUntil = 0;  // WLAN bewusst an (Update-Bereitschaft)
 
 // Spracheingabe
 bool voiceActive = false;  // Aufnahme laeuft (aus Sicht der App)
@@ -96,11 +109,6 @@ void setMode(Mode m) {
   mode = m;
   shift = false;
   multitap.reset();
-  if (m == Mode::Calc) {
-    calcSince = millis();
-  } else {
-    net::enable(true);
-  }
   if (m == Mode::Camera && !camera::begin()) screen().print(camera::error());
   updateStatus();
 }
@@ -115,7 +123,7 @@ void submit();
 
 void onBridge(const char* type, const char* text) {
   Screen& s = screen(replyTo);
-  lastActivity = millis();
+  lastActivity = lastNetUse = millis();
   if (!strcmp(type, "busy")) {
     busy = true;
   } else if (!strcmp(type, "line")) {
@@ -129,7 +137,6 @@ void onBridge(const char* type, const char* text) {
     voiceSend = VOICE_AUTO_SEND && replyTo == mode;
   } else if (!strcmp(type, "done")) {
     busy = false;
-    calcSince = millis();
     if (voiceSend) {
       voiceSend = false;
       submit();
@@ -153,11 +160,11 @@ void voiceStart() {
     s.print("(Spracheingabe nur im Terminal- und Kameramodus)");
     return;
   }
-  if (busy) {
+  if (busy || outbox.kind != Out::None) {
     s.print("(warte noch auf die letzte Antwort)");
     return;
   }
-  net::enable(true);
+  net::enable(true);  // schon mal verbinden, waehrend gesprochen wird
   if (!mic::start()) {
     s.print(mic::error());
     return;
@@ -171,7 +178,10 @@ void voiceCancel() {
   voiceActive = false;
 }
 
-// Aufnahme beenden und als WAV an die Bridge schicken
+bool queue(Out kind, const char* text, const char* echo);
+
+// Aufnahme beenden und als WAV an die Bridge schicken (die Aufnahme bleibt im
+// Mikrofon-Puffer, bis sie gesendet ist)
 void voiceFinish() {
   Screen& s = screen();
   mic::stop();
@@ -182,23 +192,67 @@ void voiceFinish() {
     s.print(mic::error());
     return;
   }
-  if (net::state() != net::State::Online) {
-    s.print("(Bridge nicht verbunden, Aufnahme verworfen)");
-  } else if (!net::sendBinary(wav, len)) {
-    s.print("! Senden fehlgeschlagen");
-  } else {
-    replyTo = mode;
-    busy = true;
+  if (!queue(Out::Audio, "", nullptr)) mic::release();
+}
+
+// ---------------------------------------------------------------------------
+// Postausgang: senden, sobald die Bridge verbunden ist
+// ---------------------------------------------------------------------------
+
+void clearOutbox() {
+  if (outbox.kind == Out::Audio) mic::release();
+  outbox.image.clear();
+  outbox.image.shrink_to_fit();
+  outbox.kind = Out::None;
+}
+
+// Legt eine Anfrage in den Postausgang und schaltet das WLAN ein. `echo` wird vorher
+// als eigene Zeile angezeigt (z.B. "> Frage").
+bool queue(Out kind, const char* text, const char* echo) {
+  if (busy || outbox.kind != Out::None) {
+    screen().print("(warte noch auf die letzte Antwort)");
+    return false;
   }
-  mic::release();
+  outbox.kind = kind;
+  outbox.replyTo = mode;
+  strncpy(outbox.text, text, sizeof(outbox.text) - 1);
+  outbox.text[sizeof(outbox.text) - 1] = '\0';
+  outbox.since = lastNetUse = millis();
+  if (echo) screen().print(echo);
+  net::enable(true);
+  if (net::state() != net::State::Online) screen().print("(verbinde mit der Bridge ...)");
+  return true;
 }
 
 void sendPending() {
-  if (!pending[0] || net::state() != net::State::Online) return;
-  if (net::sendPrompt(pending)) {
-    busy = true;
-    pending[0] = '\0';
+  if (outbox.kind == Out::None) return;
+  if (net::state() != net::State::Online) {
+    if (millis() - outbox.since > NET_GIVEUP_MS) {
+      screen(outbox.replyTo).print("! Bridge nicht erreichbar, Anfrage verworfen");
+      clearOutbox();
+    }
+    return;
   }
+  bool ok = false;
+  switch (outbox.kind) {
+    case Out::Prompt: ok = net::sendPrompt(outbox.text); break;
+    case Out::Image:
+      ok = net::sendBinary(outbox.image.data(), outbox.image.size()) && net::sendPrompt(outbox.text);
+      break;
+    case Out::Audio: {
+      const uint8_t* wav;
+      size_t len;
+      ok = mic::wav(wav, len) && net::sendBinary(wav, len);
+      break;
+    }
+    case Out::NewSession: ok = net::sendNew(); break;
+    case Out::None: break;
+  }
+  replyTo = outbox.replyTo;
+  clearOutbox();
+  lastNetUse = millis();
+  if (ok) busy = true;
+  else screen(replyTo).print("! Senden fehlgeschlagen");
 }
 
 // ---------------------------------------------------------------------------
@@ -229,51 +283,35 @@ void submitCalc() {
 void submitTerminal() {
   Screen& s = screen(Mode::Terminal);
   if (!s.input()[0]) return;
-  if (busy || pending[0]) {
-    s.print("(warte noch auf die letzte Antwort)");
-    return;
-  }
   char line[Screen::INPUT_BYTES + 2];
   snprintf(line, sizeof(line), "> %s", s.input());
-  s.print(line);
-  strncpy(pending, s.input(), sizeof(pending) - 1);
+  if (!queue(Out::Prompt, s.input(), line)) return;
   s.inputClear();
-  replyTo = Mode::Terminal;
-  net::enable(true);
-  if (net::state() != net::State::Online) s.print("(wird gesendet, sobald die Bridge verbunden ist)");
   sendPending();
 }
 
 // Foto aufnehmen und mit der Eingabe als Frage schicken (leer = "beschreibe das Bild").
 void submitCamera() {
   Screen& s = screen(Mode::Camera);
-  if (busy) {
+  if (busy || outbox.kind != Out::None) {
     s.print("(warte noch auf die letzte Antwort)");
-    return;
-  }
-  if (net::state() != net::State::Online) {
-    s.print("(Bridge nicht verbunden)");
     return;
   }
   const uint8_t* jpeg;
   size_t len;
-  if (!camera::capture(jpeg, len)) {
+  if (!camera::capture(jpeg, len)) {  // sofort aufnehmen, gesendet wird nach dem Verbinden
     s.print(camera::error());
-    return;
-  }
-  bool sent = net::sendBinary(jpeg, len);
-  camera::release();
-  if (!sent || !net::sendPrompt(s.input())) {
-    s.print("! Senden fehlgeschlagen");
     return;
   }
   char line[Screen::INPUT_BYTES + 32];
   snprintf(line, sizeof(line), "> [Foto %u kB] %s", static_cast<unsigned>((len + 512) / 1024),
            s.input());
-  s.print(line);
-  s.inputClear();
-  replyTo = Mode::Camera;
-  busy = true;
+  if (queue(Out::Image, s.input(), line)) {
+    outbox.image.assign(jpeg, jpeg + len);  // grosse Bloecke landen im PSRAM
+    s.inputClear();
+  }
+  camera::release();
+  sendPending();
 }
 
 void submit() {
@@ -312,6 +350,7 @@ void requestOff() {
 void sleepNow() {
   offRequested = false;
   if (voiceActive) voiceCancel();
+  clearOutbox();
   camera::end();
   net::enable(false);
   if (!keypad::armWake()) {  // doch noch eine Taste gedrueckt: gleich nochmal versuchen
@@ -325,6 +364,17 @@ void sleepNow() {
   display::power(true);
   lastActivity = millis();
   setMode(mode);
+}
+
+// WLAN fuer OTA_WINDOW_MS anlassen, damit ein Update per WLAN ankommen kann.
+void stayOnline() {
+  keepOnlineUntil = millis() + OTA_WINDOW_MS;
+  lastNetUse = millis();
+  net::enable(true);
+  char buf[80];
+  snprintf(buf, sizeof(buf), "WLAN bleibt %u min an (Update: %s.local)",
+           static_cast<unsigned>(OTA_WINDOW_MS / 60000), OTA_HOSTNAME);
+  screen().print(buf);
 }
 
 // Text, den eine Taste in die Eingabezeile schreibt, sonst nullptr.
@@ -392,8 +442,13 @@ void onKey(Key k) {
       else alpha[idx(mode)] = !alpha[idx(mode)];
       break;
     case K_MODE:
-      if (wasShift && mode == Mode::Calc) degrees = !degrees;  // SHIFT+MODE: DEG/RAD
-      else nextMode();
+      if (wasShift && mode == Mode::Calc) {
+        degrees = !degrees;  // SHIFT+MODE im Rechner: DEG/RAD
+      } else if (wasShift) {
+        stayOnline();  // SHIFT+MODE im Terminal/Kamera: bereit fuer ein Update per WLAN
+      } else {
+        nextMode();
+      }
       break;
     case K_EXE: submit(); break;
     case K_DEL: s.inputBackspace(); break;
@@ -402,8 +457,8 @@ void onKey(Key k) {
         requestOff();  // SHIFT+AC = aus, wie beim Casio
       } else if (s.input()[0]) {
         s.inputClear();
-      } else if (mode == Mode::Terminal && net::sendNew()) {
-        s.print("-- neue Sitzung --");
+      } else if (mode == Mode::Terminal && queue(Out::NewSession, "", "-- neue Sitzung --")) {
+        sendPending();
       }
       break;
     case K_UP: s.scroll(wasShift ? Screen::VIEW_ROWS : 1); break;
@@ -459,11 +514,15 @@ void serialCommand(const char* cmd) {
   else if (!strcmp(cmd, "keys")) {
     logKeys = !logKeys;
     Serial.printf("[app] Tastenprotokoll %s\n", logKeys ? "an" : "aus");
-  } else if (!strcmp(cmd, "wifi")) net::enable(!net::enabled());
-  else if (!strcmp(cmd, "new")) onKey(K_AC);
-  else if (!strcmp(cmd, "ping")) {
+  } else if (!strcmp(cmd, "wifi") || !strcmp(cmd, "ota")) {
+    stayOnline();
+  } else if (!strcmp(cmd, "new")) {
+    onKey(K_AC);
+  } else if (!strcmp(cmd, "ping")) {
     replyTo = mode;
-    if (!net::sendPing()) Serial.println("[app] Bridge nicht verbunden");
+    lastNetUse = millis();
+    net::enable(true);
+    if (!net::sendPing()) Serial.println("[app] Bridge (noch) nicht verbunden");
   } else if (!strcmp(cmd, "off")) {
     requestOff();
   } else if (!strcmp(cmd, "rec")) {
@@ -474,7 +533,7 @@ void serialCommand(const char* cmd) {
     if (k == K_NONE) Serial.println("[app] unbekannte Taste (Namen wie EXE, AC, SHIFT, 7, sin)");
     else onKey(k);
   } else {
-    Serial.println("Befehle: :calc :term :cam  :keys (Tastenprotokoll)  :wifi (an/aus)");
+    Serial.println("Befehle: :calc :term :cam  :keys (Tastenprotokoll)  :ota (WLAN 5 min an)");
     Serial.println("         :new (neue Claude-Sitzung)  :ping  :key NAME (Taste druecken)");
     Serial.println("         :rec (Spracheingabe starten/abschicken)  :off (ausschalten)");
     Serial.println("Jede andere Zeile wird im aktuellen Modus eingegeben und abgeschickt.");
@@ -554,14 +613,16 @@ void loop() {
   sendPending();
   if (voiceActive && !mic::recording()) voiceFinish();  // Puffer voll
 
-  // WLAN im Rechnermodus nach einer Weile abschalten (Akku)
-  if (mode == Mode::Calc && net::enabled() && !busy && !pending[0] && !ota::running() &&
-      !power::updatePending() && millis() - calcSince > WIFI_IDLE_OFF_MS) {
+  // WLAN nur solange es gebraucht wird (Akku): nach der letzten Anfrage/Antwort
+  // noch WIFI_LINGER_MS fuer schnelle Rueckfragen, dann aus
+  bool netNeeded = busy || outbox.kind != Out::None || voiceActive || ota::running() ||
+                   power::updatePending() || static_cast<int32_t>(keepOnlineUntil - millis()) > 0;
+  if (net::enabled() && !netNeeded && millis() - lastNetUse > WIFI_LINGER_MS) {
     net::enable(false);
   }
 
   // Ausschalten: auf Wunsch (SHIFT+AC) oder nach AUTO_OFF_MS ohne Eingabe
-  if (!offRequested && !busy && !voiceActive && !pending[0] &&
+  if (!offRequested && !busy && !voiceActive && outbox.kind == Out::None &&
       millis() - lastActivity > AUTO_OFF_MS &&
       !cannotSleep()) {
     offRequested = true;

@@ -39,6 +39,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - Eine WebSocket-Verbindung in beide Richtungen statt UDP/TCP-Mix. Verschluesselung macht WPA2.
 - Bridge nutzt `claude -p --output-format stream-json`, nicht pexpect auf die TUI.
 - Akku: mit WLAN grob 1-2 h Terminalbetrieb; WLAN/Kamera aus, wenn nicht gebraucht.
+- WLAN nur bei Bedarf: an beim Senden (Postausgang), aus 30 s nach der letzten Antwort.
+  Kanal/BSSID im RTC-RAM fuer schnelles Wiederverbinden. SHIFT+MODE im Terminal/Kamera
+  haelt es 5 min an (OTA-Update). Die Bridge haelt die Claude-Sitzung ueber Verbindungen hinweg.
 - Gehaeuse: keine neuen Loecher ausser fuer die Kamera (Kameraloch dient auch als Schallweg fuers Mikro).
   Die Kamera darf hinten etwas herausschauen (Rueckkamera). Dann zaehlt fuer die Bauhoehe nur
   XIAO + Sense-Platine ohne Kamera; die Mappe braucht eine Aussparung fuer den Buckel, damit der

@@ -23,10 +23,15 @@ class SimWiFi {
     if (m == WIFI_OFF) begun_ = false;
   }
   void setSleep(bool) {}
-  void begin(const char*, const char*) {
+  void begin(const char*, const char*, int32_t = 0, const uint8_t* = nullptr) {
     begun_ = true;
     since_ = millis();
   }
+  const uint8_t* BSSID() const {
+    static const uint8_t bssid[6] = {0x02, 0, 0, 0, 0, 1};
+    return bssid;
+  }
+  int32_t channel() const { return 6; }
   void disconnect(bool = false) { begun_ = false; }
   wl_status_t status() const {
     return begun_ && millis() - since_ > 500 ? WL_CONNECTED : WL_DISCONNECTED;

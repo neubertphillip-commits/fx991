@@ -1,6 +1,7 @@
 #include "net.h"
 
 #include <Arduino.h>
+#include <string.h>
 #include <ArduinoJson.h>
 #include <WebSocketsClient.h>
 #include <WiFi.h>
@@ -20,6 +21,12 @@ bool wsConnected = false;
 uint32_t connectStart = 0;
 const char* bridgeHost = BRIDGE_HOST;
 uint16_t bridgePort = BRIDGE_PORT;
+bool fastAttempt = false;
+
+// Kanal und Zugangspunkt der letzten Verbindung (bleiben im Tiefschlaf erhalten). Damit
+// entfaellt beim naechsten Verbinden die Kanalsuche, das spart Zeit und Strom.
+RTC_DATA_ATTR uint8_t savedBssid[6];
+RTC_DATA_ATTR int32_t savedChannel = 0;
 
 void onWsEvent(WStype_t type, uint8_t* payload, size_t length) {
   switch (type) {
@@ -51,7 +58,9 @@ void startWifi() {
   Serial.printf("[net] WLAN an, verbinde mit '%s'\n", WIFI_SSID);
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(true);  // Modem-Sleep zwischen den Beacons spart Strom
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  fastAttempt = savedChannel > 0;
+  if (fastAttempt) WiFi.begin(WIFI_SSID, WIFI_PASS, savedChannel, savedBssid);
+  else WiFi.begin(WIFI_SSID, WIFI_PASS);
   connectStart = millis();
 }
 
@@ -122,7 +131,15 @@ void loop() {
       wsStarted = false;
       wsConnected = false;
     }
-    if (millis() - connectStart > WIFI_CONNECT_TIMEOUT_MS) {
+    if (fastAttempt && millis() - connectStart > WIFI_FAST_TIMEOUT_MS) {
+      // Hotspot hat vermutlich den Kanal gewechselt: normal suchen
+      Serial.println("[net] Schnellverbindung klappt nicht, suche Hotspot");
+      fastAttempt = false;
+      savedChannel = 0;
+      WiFi.disconnect();
+      WiFi.begin(WIFI_SSID, WIFI_PASS);
+      connectStart = millis();
+    } else if (millis() - connectStart > WIFI_CONNECT_TIMEOUT_MS) {
       Serial.println("[net] WLAN-Timeout, neuer Versuch");
       WiFi.disconnect();
       WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -132,7 +149,12 @@ void loop() {
   }
 
   if (!wsStarted) {
-    Serial.printf("[net] WLAN verbunden, IP %s\n", WiFi.localIP().toString().c_str());
+    Serial.printf("[net] WLAN verbunden nach %u ms, IP %s\n",
+                  static_cast<unsigned>(millis() - connectStart), WiFi.localIP().toString().c_str());
+    if (const uint8_t* bssid = WiFi.BSSID()) {
+      memcpy(savedBssid, bssid, sizeof(savedBssid));
+      savedChannel = WiFi.channel();
+    }
     ws.begin(bridgeHost, bridgePort, "/");
     ws.onEvent(onWsEvent);
     ws.setReconnectInterval(3000);

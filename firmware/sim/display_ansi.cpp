@@ -122,7 +122,7 @@ void render(const Screen& s) {
   out += "└" + repeat("─", W) + "┘" + EOL;
   out += std::string(DIM) +
          "Tab MODE  Enter EXE  Esc AC  Bksp DEL  s SHIFT  a ALPHA  ↑↓ blaettern" + EOL +
-         "x EXP  n Ans  w sqrt  i sin  o cos  t tan  l ln  g log  : Befehl  \" Text  Strg-C Ende" +
+         "x EXP  n Ans  w sqrt  i sin  o cos  t tan  l ln  g log  v Sprache  : Befehl  \" Text" +
          OFF + EOL;
 
   int logRows = rows - (viewRows + 7);

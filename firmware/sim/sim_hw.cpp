@@ -9,6 +9,7 @@
 
 #include "../casio_deck/camera.h"
 #include "../casio_deck/keypad.h"
+#include "../casio_deck/mic.h"
 #include "Arduino.h"
 #include "WiFi.h"
 #include "sim.h"
@@ -33,6 +34,7 @@ namespace sim {
 
 uint32_t uiVersion = 0;
 const char* cameraImage = nullptr;
+const char* micFile = nullptr;
 
 namespace {
 constexpr unsigned LOG_LINES = 64;
@@ -123,3 +125,61 @@ void release() {}
 const char* error() { return lastError; }
 
 }  // namespace camera
+
+// ---------------------------------------------------------------------------
+// Mikrofon: "nimmt" die WAV-Datei aus --mic auf
+// ---------------------------------------------------------------------------
+
+namespace mic {
+
+static bool running = false;
+static uint32_t startedAt = 0;
+static std::vector<uint8_t> recorded;
+static const char* lastError = "";
+
+bool start() {
+  if (!sim::micFile) {
+    lastError = "Simulator: keine Aufnahme-Datei (--mic sprache.wav)";
+    return false;
+  }
+  running = true;
+  startedAt = millis();
+  recorded.clear();
+  return true;
+}
+
+void stop() {
+  if (!running) return;
+  running = false;
+  FILE* f = fopen(sim::micFile, "rb");
+  if (!f) {
+    lastError = "Simulator: Aufnahme-Datei nicht lesbar";
+    return;
+  }
+  uint8_t buf[4096];
+  size_t n;
+  while ((n = fread(buf, 1, sizeof(buf), f)) > 0) recorded.insert(recorded.end(), buf, buf + n);
+  fclose(f);
+}
+
+void cancel() {
+  running = false;
+  recorded.clear();
+}
+
+bool recording() { return running; }
+
+uint32_t elapsedMs() { return running ? millis() - startedAt : 0; }
+
+bool wav(const uint8_t*& data, size_t& len) {
+  if (recorded.empty()) return false;
+  data = recorded.data();
+  len = recorded.size();
+  return true;
+}
+
+void release() { recorded.clear(); }
+
+const char* error() { return lastError; }
+
+}  // namespace mic

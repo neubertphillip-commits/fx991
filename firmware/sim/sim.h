@@ -17,5 +17,7 @@ const char* lineEdit();
 
 // Datei, die die simulierte Kamera als Foto liefert (nullptr = keine).
 extern const char* cameraImage;
+// WAV-Datei, die das simulierte Mikrofon "aufnimmt" (nullptr = keine).
+extern const char* micFile;
 
 }  // namespace sim

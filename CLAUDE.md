@@ -19,7 +19,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - MCP23017 als I/O-Expander fuer die Tastaturmatrix, I2C-Adresse 0x20: 2x MCP23017-E/SO (SO-28)
   + 2x SOIC-28-auf-DIP-Adapter. Zweiter Chip als Reserve oder fuer >16 Matrixleitungen (Adresse 0x21).
   Nicht die SSOP-Variante (-E/SS), die ist kaum von Hand zu loeten.
-- Mini-Schiebeschalter in die Akku-Plusleitung (XIAO hat keinen Schalter)
+- ~~Mini-Schiebeschalter~~ entfaellt (keine Loecher): Ausschalten per Software statt Schalter
+- Vorschlag, offen: 2x 100 kOhm als Spannungsteiler fuer eine Akkuanzeige (an D3 statt LT7680-WAIT)
 - Silikonlitze 28-30 AWG, Steckbrett + Jumperkabel
 - Reserve: 4,7 kOhm (I2C), 100 nF (VDD des MCP23017), 1N4148/BAT54 (Matrix), Kapton-Band
 - Offen: Versorgung des LT7680-Boards im Datenblatt pruefen; bei 5 V Step-up 3,7 -> 5 V noetig
@@ -32,6 +33,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - Eine WebSocket-Verbindung in beide Richtungen statt UDP/TCP-Mix. Verschluesselung macht WPA2.
 - Bridge nutzt `claude -p --output-format stream-json`, nicht pexpect auf die TUI.
 - Akku: mit WLAN grob 1-2 h Terminalbetrieb; WLAN/Kamera aus, wenn nicht gebraucht.
+- Gehaeuse: keine neuen Loecher ausser fuer die Kamera (Kameraloch dient auch als Schallweg fuers Mikro).
+- Spracheingabe: PDM-Mikro der Sense-Platine -> WAV als Binaer-Frame -> Bridge wandelt per `--stt`
+  (whisper.cpp) in Text. `claude -p` nimmt kein Audio. Optional: ohne `--stt` laeuft alles andere normal.
 
 ## Struktur
 
@@ -47,3 +51,6 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 2. ~~Firmware-Grundgeruest~~ steht inkl. ALPHA-Mehrfachtippen (kompiliert, im Simulator getestet, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt.
 3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.
+5. ~~Spracheingabe~~ geschrieben (Simulator + Bridge getestet, whisper.cpp in Termux und Mikro ungetestet).
+6. Einbau ohne Loecher (Vorschlaege, noch nicht entschieden): Laden/Flashen ueber USB-C im Batteriefach oder Qi, Ausschalten per Software
+   (Deep Sleep, Wecken per Taste), OTA-Update. Gehaeuse-Innenmasse messen (Hoehe XIAO+Sense ~15 mm!).

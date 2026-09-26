@@ -7,6 +7,7 @@
 #include "../casio_deck/calc.h"
 #include "../casio_deck/multitap.h"
 #include "../casio_deck/screen.h"
+#include "../casio_deck/wav.h"
 
 static int failures = 0;
 
@@ -182,10 +183,29 @@ static void testMultiTap() {
   CHECK(!strcmp(s.input(), "aa"));
 }
 
+static void testWav() {
+  uint8_t h[WAV_HEADER_BYTES];
+  wavHeader(h, 32000, 16000);
+  CHECK(!memcmp(h, "RIFF", 4) && !memcmp(h + 8, "WAVEfmt ", 8) && !memcmp(h + 36, "data", 4));
+  CHECK(h[4] == ((36 + 32000) & 0xFF) && h[5] == ((36 + 32000) >> 8));
+  CHECK(h[24] == (16000 & 0xFF) && h[25] == (16000 >> 8));  // Abtastrate
+  CHECK(h[22] == 1 && h[34] == 16);                         // mono, 16 Bit
+  CHECK(h[40] == (32000 & 0xFF) && h[41] == (32000 >> 8));  // Datenlaenge
+
+  // Gleichanteil weg, verstaerkt, begrenzt
+  int16_t s[4] = {110, 90, 110, 90};
+  wavAmplify(s, 4, 4);
+  CHECK(s[0] == 40 && s[1] == -40);
+  int16_t loud[2] = {20000, -20000};
+  wavAmplify(loud, 2, 4);
+  CHECK(loud[0] == 32767 && loud[1] == -32768);
+}
+
 int main() {
   testCalc();
   testScreen();
   testMultiTap();
+  testWav();
   if (failures) {
     printf("%d Fehler\n", failures);
     return 1;

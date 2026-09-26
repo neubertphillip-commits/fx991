@@ -1,7 +1,7 @@
 // Casio-Deck PC-Simulator: laeuft mit der echten Firmware-Logik (app.cpp, net.cpp, ...)
 // im Terminal und verbindet sich mit der Bridge.
 //
-//   ./casio-sim [--host 127.0.0.1] [--port 8765] [--cam foto.jpg]
+//   ./casio-sim [--host 127.0.0.1] [--port 8765] [--cam foto.jpg] [--mic sprache.wav]
 #include <poll.h>
 #include <signal.h>
 #include <stdio.h>
@@ -131,6 +131,11 @@ void pollKeyboard() {
       }
       continue;
     }
+    if (c == 'v') {  // Spracheingabe = SHIFT+ALPHA
+      app::injectKey(K_SHIFT);
+      app::injectKey(K_ALPHA);
+      continue;
+    }
     Key k = mapKey(c);
     if (k != K_NONE) app::injectKey(k);
   }
@@ -139,7 +144,8 @@ void pollKeyboard() {
 void onSignal(int) { quit = 1; }
 
 void usage(const char* prog) {
-  fprintf(stderr, "Aufruf: %s [--host HOST] [--port PORT] [--cam BILD.jpg]\n", prog);
+  fprintf(stderr, "Aufruf: %s [--host HOST] [--port PORT] [--cam BILD.jpg] [--mic SPRACHE.wav]\n",
+          prog);
   exit(2);
 }
 
@@ -154,6 +160,7 @@ int main(int argc, char** argv) {
     if (!strcmp(argv[i], "--host") && i + 1 < argc) host = argv[++i];
     else if (!strcmp(argv[i], "--port") && i + 1 < argc) port = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--cam") && i + 1 < argc) sim::cameraImage = argv[++i];
+    else if (!strcmp(argv[i], "--mic") && i + 1 < argc) sim::micFile = argv[++i];
     else usage(argv[0]);
   }
   if (!isatty(STDIN_FILENO)) {

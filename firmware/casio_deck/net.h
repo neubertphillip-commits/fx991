@@ -15,7 +15,7 @@ enum class State : uint8_t {
 };
 
 // Wird fuer jede Nachricht der Bridge aufgerufen: type = "busy", "line", "done",
-// "err", "pong"; text ist bei Nachrichten ohne Text leer.
+// "err", "pong", "text" (erkannte Sprache); text ist bei Nachrichten ohne Text leer.
 using MessageHandler = void (*)(const char* type, const char* text);
 
 void begin(MessageHandler handler);
@@ -34,6 +34,7 @@ const char* stateName(State s);
 bool sendPrompt(const char* text);
 bool sendNew();
 bool sendPing();
-bool sendImage(const uint8_t* jpeg, size_t len);
+// Binaer-Frame: JPEG (Kamera) oder WAV (Spracheingabe); die Bridge erkennt es am Inhalt.
+bool sendBinary(const uint8_t* data, size_t len);
 
 }  // namespace net

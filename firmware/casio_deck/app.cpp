@@ -9,6 +9,7 @@
 #include "config.h"
 #include "display.h"
 #include "keypad.h"
+#include "mic.h"
 #include "multitap.h"
 #include "net.h"
 #include "screen.h"
@@ -17,6 +18,8 @@ namespace {
 
 // Rechner: offline, WLAN aus. Terminal: Prompts an die Bridge (claude -p).
 // Kamera: Foto (+ optional Frage) an die Bridge.
+// Spracheingabe (Terminal/Kamera): SHIFT+ALPHA startet, EXE oder SHIFT+ALPHA schickt,
+// AC verwirft; die Bridge schickt den erkannten Text zurueck in die Eingabezeile.
 // MODE wechselt reihum; auf dem seriellen Monitor auch :calc, :term, :cam.
 enum class Mode : uint8_t { Calc, Terminal, Camera };
 constexpr uint8_t MODE_COUNT = 3;
@@ -42,6 +45,10 @@ bool busy = false;                       // Anfrage laeuft
 Mode replyTo = Mode::Terminal;           // wohin die Antwort geschrieben wird
 char pending[Screen::INPUT_BYTES] = "";  // Prompt, der auf die Verbindung wartet
 
+// Spracheingabe
+bool voiceActive = false;  // Aufnahme laeuft (aus Sicht der App)
+bool voiceSend = false;    // erkannten Text nach "done" abschicken (VOICE_AUTO_SEND)
+
 char serialBuf[Screen::INPUT_BYTES];
 size_t serialLen = 0;
 
@@ -52,7 +59,12 @@ Screen& screen() { return screen(mode); }
 void updateStatus() {
   char buf[Screen::LINE_BYTES];
   const char* netState = net::stateName(net::state());
+  char rec[16];
   const char* input = alpha[idx(mode)] ? (shift ? "ABC" : "abc") : (shift ? "S" : "123");
+  if (voiceActive) {
+    snprintf(rec, sizeof(rec), "REC %us", static_cast<unsigned>(mic::elapsedMs() / 1000));
+    input = rec;
+  }
   switch (mode) {
     case Mode::Calc:
       snprintf(buf, sizeof(buf), "%s %s | %s | WLAN %s%s", MODE_NAMES[0], input,
@@ -67,7 +79,10 @@ void updateStatus() {
   screen().setInputMarked(multitap.pending(millis()));
 }
 
+void voiceCancel();
+
 void setMode(Mode m) {
+  if (voiceActive) voiceCancel();
   if (mode == Mode::Camera && m != Mode::Camera) camera::end();
   mode = m;
   shift = false;
@@ -87,15 +102,28 @@ void nextMode() { setMode(static_cast<Mode>((idx(mode) + 1) % MODE_COUNT)); }
 // Bridge
 // ---------------------------------------------------------------------------
 
+void submit();
+
 void onBridge(const char* type, const char* text) {
   Screen& s = screen(replyTo);
   if (!strcmp(type, "busy")) {
     busy = true;
   } else if (!strcmp(type, "line")) {
     s.print(text);
+  } else if (!strcmp(type, "text")) {
+    // Erkannte Sprache: an die Eingabe anhaengen, dort kann man sie noch korrigieren
+    const char* in = s.input();
+    size_t len = strlen(in);
+    if (len && in[len - 1] != ' ') s.inputAppend(" ");
+    s.inputAppend(text);
+    voiceSend = VOICE_AUTO_SEND && replyTo == mode;
   } else if (!strcmp(type, "done")) {
     busy = false;
     calcSince = millis();
+    if (voiceSend) {
+      voiceSend = false;
+      submit();
+    }
   } else if (!strcmp(type, "err")) {
     char buf[Screen::LINE_BYTES * 2];
     snprintf(buf, sizeof(buf), "! %s", text);
@@ -103,6 +131,56 @@ void onBridge(const char* type, const char* text) {
   } else if (!strcmp(type, "pong")) {
     s.print("pong");
   }
+}
+
+// ---------------------------------------------------------------------------
+// Spracheingabe
+// ---------------------------------------------------------------------------
+
+void voiceStart() {
+  Screen& s = screen();
+  if (mode == Mode::Calc) {
+    s.print("(Spracheingabe nur im Terminal- und Kameramodus)");
+    return;
+  }
+  if (busy) {
+    s.print("(warte noch auf die letzte Antwort)");
+    return;
+  }
+  net::enable(true);
+  if (!mic::start()) {
+    s.print(mic::error());
+    return;
+  }
+  voiceActive = true;
+  multitap.reset();
+}
+
+void voiceCancel() {
+  mic::cancel();
+  voiceActive = false;
+}
+
+// Aufnahme beenden und als WAV an die Bridge schicken
+void voiceFinish() {
+  Screen& s = screen();
+  mic::stop();
+  voiceActive = false;
+  const uint8_t* wav;
+  size_t len;
+  if (!mic::wav(wav, len)) {
+    s.print(mic::error());
+    return;
+  }
+  if (net::state() != net::State::Online) {
+    s.print("(Bridge nicht verbunden, Aufnahme verworfen)");
+  } else if (!net::sendBinary(wav, len)) {
+    s.print("! Senden fehlgeschlagen");
+  } else {
+    replyTo = mode;
+    busy = true;
+  }
+  mic::release();
 }
 
 void sendPending() {
@@ -173,7 +251,7 @@ void submitCamera() {
     s.print(camera::error());
     return;
   }
-  bool sent = net::sendImage(jpeg, len);
+  bool sent = net::sendBinary(jpeg, len);
   camera::release();
   if (!sent || !net::sendPrompt(s.input())) {
     s.print("! Senden fehlgeschlagen");
@@ -239,6 +317,13 @@ void onKey(Key k) {
   bool wasShift = shift;
   shift = false;
 
+  // Waehrend der Aufnahme: EXE/ALPHA schicken, AC verwirft, der Rest wird ignoriert
+  if (voiceActive) {
+    if (k == K_AC) voiceCancel();
+    else if (k == K_EXE || k == K_ALPHA) voiceFinish();
+    return;
+  }
+
   // Buchstaben per Mehrfachtippen, SHIFT davor = Grossbuchstabe
   if (alpha[idx(mode)]) {
     const char* text;
@@ -254,7 +339,10 @@ void onKey(Key k) {
 
   switch (k) {
     case K_SHIFT: shift = !wasShift; break;
-    case K_ALPHA: alpha[idx(mode)] = !alpha[idx(mode)]; break;
+    case K_ALPHA:
+      if (wasShift) voiceStart();  // SHIFT+ALPHA: Spracheingabe
+      else alpha[idx(mode)] = !alpha[idx(mode)];
+      break;
     case K_MODE:
       if (wasShift && mode == Mode::Calc) degrees = !degrees;  // SHIFT+MODE: DEG/RAD
       else nextMode();
@@ -323,6 +411,9 @@ void serialCommand(const char* cmd) {
   else if (!strcmp(cmd, "ping")) {
     replyTo = mode;
     if (!net::sendPing()) Serial.println("[app] Bridge nicht verbunden");
+  } else if (!strcmp(cmd, "rec")) {
+    if (voiceActive) voiceFinish();
+    else voiceStart();
   } else if (!strncmp(cmd, "key ", 4)) {
     Key k = keyByName(cmd + 4);
     if (k == K_NONE) Serial.println("[app] unbekannte Taste (Namen wie EXE, AC, SHIFT, 7, sin)");
@@ -330,6 +421,7 @@ void serialCommand(const char* cmd) {
   } else {
     Serial.println("Befehle: :calc :term :cam  :keys (Tastenprotokoll)  :wifi (an/aus)");
     Serial.println("         :new (neue Claude-Sitzung)  :ping  :key NAME (Taste druecken)");
+    Serial.println("         :rec (Spracheingabe starten/abschicken)");
     Serial.println("Jede andere Zeile wird im aktuellen Modus eingegeben und abgeschickt.");
   }
 }
@@ -382,6 +474,7 @@ void loop() {
     screen(replyTo).print("! Verbindung zur Bridge verloren");
   }
   sendPending();
+  if (voiceActive && !mic::recording()) voiceFinish();  // Puffer voll
 
   // WLAN im Rechnermodus nach einer Weile abschalten (Akku)
   if (mode == Mode::Calc && net::enabled() && !busy && !pending[0] &&

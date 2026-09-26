@@ -2,7 +2,7 @@
 
 Arduino/C++ fuer den Seeed XIAO ESP32S3 Sense: Zustandsautomat (Rechner / Terminal /
 Kamera), WLAN, WebSocket-Client zur Bridge, MCP23017-Tastaturscan, Texteingabe per
-Mehrfachtippen, Kamera (OV3660). Das Display ist noch nicht angeschlossen; der
+Mehrfachtippen, Spracheingabe, Kamera (OV3660). Das Display ist noch nicht angeschlossen; der
 Bildschirminhalt wird bis dahin auf dem seriellen Monitor ausgegeben.
 
 Ohne jede Hardware laesst sich alles im [PC-Simulator](#pc-simulator) ausprobieren.
@@ -41,6 +41,7 @@ cd sim && make                      # holt beim ersten Mal ArduinoJson per git
 ./casio-sim                         # Bridge auf localhost:8765
 ./casio-sim --host 192.168.43.1     # Bridge auf dem Handy
 ./casio-sim --cam foto.jpg          # Kameramodus schickt diese Datei
+./casio-sim --mic sprache.wav       # Spracheingabe "nimmt" diese Datei auf (16 kHz mono)
 ```
 
 Die Bridge laesst sich auch auf dem Laptop starten (`python bridge.py`), dann braucht
@@ -53,7 +54,7 @@ es das Handy gar nicht. Tasten im Simulator:
 | Esc | AC | x / n / w | EXP / Ans / sqrt |
 | Backspace | DEL | i / o / t | sin / cos / tan |
 | Pfeile | UP/DOWN/LEFT/RIGHT | l / g | ln / log |
-| 0-9 . + - * / ^ ( ) | wie beschriftet | | |
+| 0-9 . + - * / ^ ( ) | wie beschriftet | v | SHIFT+ALPHA (Sprache) |
 
 `:` oeffnet eine Befehlszeile fuer die seriellen Befehle (`:help`), `"` eine Zeile fuer
 freien Text (wird wie vom seriellen Monitor eingegeben). Strg-C beendet.
@@ -68,6 +69,8 @@ freien Text (wird wie vom seriellen Monitor eingegeben). Strg-C beendet.
 | `keymap.cpp` | Matrixposition -> Taste (noch leer, siehe unten) |
 | `multitap.cpp` | Buchstaben per Mehrfachtippen (ALPHA) |
 | `camera.cpp` | OV3660: an/aus, JPEG aufnehmen |
+| `mic.cpp` | PDM-Mikrofon: Aufnahme in den PSRAM (eigener Task) |
+| `wav.cpp` | WAV-Header, Verstaerkung |
 | `net.cpp` | WLAN an/aus, WebSocket, JSON-Protokoll der Bridge |
 | `screen.cpp` | Textpuffer 60x40: Status, Scrollback, Eingabezeile (UTF-8) |
 | `display_serial.cpp` | Display-Ersatz: gibt den Screen seriell aus |
@@ -99,6 +102,17 @@ MCP23017: A0-A2 an GND (0x20), RESET an 3V3.
 | UP/DOWN | blaettern, mit SHIFT seitenweise | wie Rechner | wie Rechner |
 | SHIFT+MODE | DEG/RAD | | |
 | ALPHA | Ziffern/Buchstaben umschalten | wie Rechner | wie Rechner |
+| SHIFT+ALPHA | | Spracheingabe | Spracheingabe (Frage zum Foto) |
+
+## Spracheingabe
+
+Das PDM-Mikrofon der Sense-Platine (GPIO42 Takt, GPIO41 Daten, keine Kantenpins).
+SHIFT+ALPHA startet die Aufnahme (Status `REC 3s`), EXE oder nochmal ALPHA beendet und
+schickt sie als WAV an die Bridge, AC verwirft. Nach max. 30 s wird automatisch
+abgeschickt. Der erkannte Text wird an die Eingabezeile angehaengt und laesst sich mit
+Mehrfachtippen korrigieren; EXE schickt ihn dann an Claude (`VOICE_AUTO_SEND` in
+`config.h` schickt sofort). Die Umwandlung in Text macht die Bridge, siehe
+`bridge/README.md`. Damit der Schall ankommt, sollte das Kameraloch nah am Mikrofon liegen.
 
 ## Texteingabe (ALPHA)
 
@@ -132,7 +146,8 @@ geht raus, sobald die Bridge verbunden ist.
 Jede Zeile wird im aktuellen Modus eingegeben und mit EXE abgeschickt, so laesst sich
 alles ohne Tastatur testen. Befehle: `:calc` `:term` `:cam` (Modus), `:keys`
 (alle Tastenereignisse protokollieren), `:wifi` (an/aus), `:new`, `:ping`,
-`:key NAME` (Taste druecken, z.B. `:key EXE`, `:key sin`), `:help`.
+`:key NAME` (Taste druecken, z.B. `:key EXE`, `:key sin`), `:rec` (Spracheingabe
+starten/abschicken), `:help`.
 
 ## Tastaturmatrix ausmessen
 
@@ -152,5 +167,6 @@ Zeilen bleiben.
 
 - LT7680-Treiber als zweites Display-Backend (`display.h`)
 - Kamera auf echter Hardware testen (Ausrichtung `CAM_VFLIP`/`CAM_HMIRROR`)
+- Mikrofon auf echter Hardware testen (`MIC_GAIN`, Schall durchs Gehaeuse)
 - Cursor in der Eingabezeile (LEFT/RIGHT zum Editieren)
 - Light-Sleep mit INTA als Wakeup, CPU-Takt reduzieren

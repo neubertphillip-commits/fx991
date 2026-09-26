@@ -167,9 +167,9 @@ bool sendPing() {
   return sendJson(doc);
 }
 
-bool sendImage(const uint8_t* jpeg, size_t len) {
+bool sendBinary(const uint8_t* data, size_t len) {
   if (!wsConnected) return false;
-  return ws.sendBIN(jpeg, len);
+  return ws.sendBIN(data, len);
 }
 
 }  // namespace net

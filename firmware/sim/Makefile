@@ -2,7 +2,7 @@
 #   make && ./casio-sim --host <handy-ip>
 FW = ../casio_deck
 FW_SRC = $(FW)/app.cpp $(FW)/calc.cpp $(FW)/screen.cpp $(FW)/keymap.cpp \
-         $(FW)/multitap.cpp $(FW)/net.cpp
+         $(FW)/multitap.cpp $(FW)/net.cpp $(FW)/wav.cpp
 SIM_SRC = sim_main.cpp sim_hw.cpp sim_websocket.cpp display_ansi.cpp
 
 JSON_VER = v7.2.0

@@ -75,4 +75,16 @@ constexpr uint32_t WIFI_IDLE_OFF_MS = 60000;
 #define CAM_VFLIP 1
 #define CAM_HMIRROR 0
 
+// ---------------------------------------------------------------------------
+// Mikrofon (PDM auf der Sense-Platine, interne Pins) und Spracheingabe
+// ---------------------------------------------------------------------------
+constexpr int PIN_MIC_CLK = 42;
+constexpr int PIN_MIC_DATA = 41;
+constexpr uint32_t MIC_SAMPLE_RATE = 16000;  // passt direkt zu whisper.cpp
+constexpr uint32_t MIC_MAX_SECONDS = 30;     // ~1 MB PSRAM
+constexpr int MIC_GAIN = 4;                  // Software-Verstaerkung, PDM ist leise
+// true: erkannten Text sofort an Claude schicken, statt ihn zum Korrigieren
+// in die Eingabezeile zu schreiben.
+constexpr bool VOICE_AUTO_SEND = false;
+
 // WLAN-Zugangsdaten und Bridge-Adresse: secrets.h (nicht im Repo, siehe net.cpp).

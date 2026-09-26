@@ -14,27 +14,28 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - LiPo 3,7 V 300 mAh, 40x30x3 mm, an BAT-Pads des XIAO
 - Kupferlackdraht 0,1 mm zum Anzapfen der Tastaturpads
 
-## Noch zu bestellen
+## Reichelt-Bestellung (Warenkorb 26.09.2026)
 
-- MCP23017 als I/O-Expander fuer die Tastaturmatrix, I2C-Adresse 0x20: 2x MCP23017-E/SO (SO-28)
-  + 2x SOIC-28-auf-DIP-Adapter. Zweiter Chip als Reserve oder fuer >16 Matrixleitungen (Adresse 0x21).
-  Nicht die SSOP-Variante (-E/SS), die ist kaum von Hand zu loeten.
-- ~~Mini-Schiebeschalter~~ entfaellt (keine Loecher): Ausschalten per Software statt Schalter
-- Qi-Empfaenger (5 V, flach, Spule ~30-40 mm, Datenblatt: Dicke) an 5V-Pin des XIAO, davor
-  Schottky-Diode (z.B. SS14) gegen Rueckspeisung, falls USB gleichzeitig steckt
-- Fuer die Safe-Case-Mappe (Lade-Etui, darf Oeffnungen/Schalter haben): Qi-Sender 5 V,
-  flacher LiPo (~1000-2000 mAh, Dicke nach Platz), Lade-/Boost-Modul mit USB-C (Powerbank-Modul),
-  Schalter oder Reed-Kontakt + Magnet, damit der Sender nur bei geschlossener Mappe laeuft
+- 2x MCP23017-E/SO (SO-28), zweiter als Reserve oder fuer >16 Matrixleitungen (Adresse 0x21)
+- Schottky-Diode Vishay 10MQ060NTRPBF (60 V, 1 A, SMA) statt SS14, zwischen Qi-Empfaenger und 5V-Pin
+- 100 nF 1206 X7R (12061C104KAT2A), 4,7 kOhm 1206 (WR12X4701FTL, Reserve fuer I2C), Kapton-Band
+- Schaltlitze 0,14 mm^2 je 10 m: rot (3V3/Akku+), schwarz (GND), gelb (Signale)
+- Kein Steckbrett, keine SOIC-Adapter: direkt loeten, nach jedem Schritt testen (dritte Hand vorhanden)
+
+## Noch zu besorgen
+
+- Qi-Empfaenger (5 V, flach, Spule ~30-40 mm, Datenblatt: Dicke) an 5V-Pin des XIAO, erst zur Endmontage
+- Mappe: vorhandenes Qi-Ladepad ausschlachten, vorerst mit einer normalen Powerbank betreiben.
+  Spaeter evtl. fest eingebaut: flacher LiPo, Powerbank-Modul mit USB-C, Reed-Kontakt + Magnet
 - Vorschlag, offen: 2x 100 kOhm als Spannungsteiler fuer eine Akkuanzeige (an D3 statt LT7680-WAIT)
-- Silikonlitze 28-30 AWG, Steckbrett + Jumperkabel
-- Reserve: 4,7 kOhm (I2C), 100 nF (VDD des MCP23017), 1N4148/BAT54 (Matrix), Kapton-Band
-- Offen: Versorgung des LT7680-Boards im Datenblatt pruefen; bei 5 V Step-up 3,7 -> 5 V noetig
+- Optional: 1N4148/BAT54, falls mehrere gleichzeitig gedrueckte Tasten Probleme machen
 
 ## Entscheidungen
 
 - MCP23017: GPA7/GPB7 nur als Ausgaenge (Datenblatt-Aenderung), also fuer Zeilen. Spalten als Eingaenge mit internen Pull-ups (GPPU).
 - I2C zuerst ohne externe Pull-ups/100 nF: interne ESP32-Pull-ups, 100 kHz. Bei Problemen 4,7 kOhm nachruesten.
 - XIAO-Pins: I2C (D4 SDA, D5 SCL), INTA vom MCP23017, SPI zum LT7680 (SCK, MOSI, MISO, CS, ggf. RST/WAIT).
+- LT7680-Board laeuft mit 3,3 V (vom 3V3-Pin des XIAO), kein Step-up noetig.
 - Eine WebSocket-Verbindung in beide Richtungen statt UDP/TCP-Mix. Verschluesselung macht WPA2.
 - Bridge nutzt `claude -p --output-format stream-json`, nicht pexpect auf die TUI.
 - Akku: mit WLAN grob 1-2 h Terminalbetrieb; WLAN/Kamera aus, wenn nicht gebraucht.

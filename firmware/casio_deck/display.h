@@ -13,4 +13,7 @@ void begin();
 // anderer Screen aktiv geworden ist.
 void render(const Screen& s);
 
+// Anzeige (und spaeter Hintergrundbeleuchtung) aus- bzw. wieder einschalten.
+void power(bool on);
+
 }  // namespace display

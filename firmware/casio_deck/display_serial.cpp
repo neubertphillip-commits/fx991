@@ -30,6 +30,11 @@ void begin() {
   Serial.setTxTimeoutMs(0);
 }
 
+void power(bool on) {
+  Serial.println(on ? "[display] an" : "[display] aus");
+  shown = nullptr;  // nach dem Einschalten alles neu ausgeben
+}
+
 void render(const Screen& s) {
   if (&s == shown && s.version() == shownVersion) return;
 

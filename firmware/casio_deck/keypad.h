@@ -24,4 +24,9 @@ bool poll(KeyEvent& ev);
 // true, solange mindestens eine Taste gedrueckt ist (Scanner aktiv).
 bool active();
 
+// Vor dem Tiefschlaf: alle Zeilen LOW, Interrupt quittieren. false, wenn gerade
+// eine Taste gedrueckt ist (der ESP32 wuerde sofort wieder aufwachen) oder der
+// MCP23017 fehlt (dann koennte ihn nichts wecken).
+bool armWake();
+
 }  // namespace keypad

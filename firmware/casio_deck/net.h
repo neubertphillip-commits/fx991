@@ -15,14 +15,22 @@ enum class State : uint8_t {
 };
 
 // Wird fuer jede Nachricht der Bridge aufgerufen: type = "busy", "line", "done",
-// "err", "pong"; text ist bei Nachrichten ohne Text leer.
+// "err", "pong", "text" (erkannte Sprache); text ist bei Nachrichten ohne Text leer.
 using MessageHandler = void (*)(const char* type, const char* text);
 
 void begin(MessageHandler handler);
+
+// Bridge-Adresse aendern (Standard aus secrets.h); z.B. fuer den PC-Simulator.
+void setBridge(const char* host, uint16_t port);
+
 void loop();
 
 void enable(bool on);
 bool enabled();
+
+// Sparsamer Wartemodus des Funkmoduls erlaubt (nur waehrend auf Claude gewartet wird,
+// nicht bei OTA-Updates, die sonst sehr langsam wuerden).
+void allowLowPower(bool allowed);
 State state();
 const char* stateName(State s);
 
@@ -30,6 +38,7 @@ const char* stateName(State s);
 bool sendPrompt(const char* text);
 bool sendNew();
 bool sendPing();
-bool sendImage(const uint8_t* jpeg, size_t len);
+// Binaer-Frame: JPEG (Kamera) oder WAV (Spracheingabe); die Bridge erkennt es am Inhalt.
+bool sendBinary(const uint8_t* data, size_t len);
 
 }  // namespace net

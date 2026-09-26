@@ -5,7 +5,9 @@
 #include <string.h>
 
 #include "../casio_deck/calc.h"
+#include "../casio_deck/multitap.h"
 #include "../casio_deck/screen.h"
+#include "../casio_deck/wav.h"
 
 static int failures = 0;
 
@@ -126,9 +128,84 @@ static void testScreen() {
   CHECK(!strcmp(t.viewLine(0), "11"));  // aeltester Eintrag im Puffer
 }
 
+// Tippt eine Tastenfolge mit Zeitabstaenden in einen Screen, wie app.cpp es tut.
+static void tap(Screen& s, MultiTap& mt, Key k, uint32_t& now, uint32_t gap, bool upper = false) {
+  now += gap;
+  const char* text;
+  bool replace;
+  if (mt.feed(k, upper, now, text, replace)) {
+    if (replace) s.inputBackspace();
+    s.inputAppend(text);
+  }
+}
+
+static void testMultiTap() {
+  static Screen s;
+  MultiTap mt;
+  uint32_t now = 1000;
+  // "hallo": 44 2 555 (Pause) 555 666
+  tap(s, mt, K_4, now, 100);
+  tap(s, mt, K_4, now, 200);
+  tap(s, mt, K_2, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, MultiTap::TIMEOUT_MS + 1);  // gleiche Taste nach Pause = neues Zeichen
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_5, now, 200);
+  tap(s, mt, K_6, now, 200);
+  tap(s, mt, K_6, now, 200);
+  tap(s, mt, K_6, now, 200);
+  CHECK(!strcmp(s.input(), "hallo"));
+  CHECK(mt.pending(now));
+  CHECK(!mt.pending(now + MultiTap::TIMEOUT_MS));
+
+  // Leerzeichen, Umlaut, Grossbuchstabe (gilt fuer die ganze Auswahl), Umlauf
+  s.inputClear();
+  mt.reset();
+  tap(s, mt, K_8, now, 100, true);
+  tap(s, mt, K_8, now, 100);
+  tap(s, mt, K_8, now, 100);
+  tap(s, mt, K_8, now, 100);  // T U V Ü
+  CHECK(!strcmp(s.input(), "\xC3\x9C"));
+  tap(s, mt, K_0, now, 100);
+  tap(s, mt, K_7, now, 100);
+  for (int i = 0; i < 6; i++) tap(s, mt, K_7, now, 100);  // p q r s ß 7 -> wieder p
+  CHECK(!strcmp(s.input(), "\xC3\x9C p"));
+
+  // Andere Taste beendet die Auswahl
+  s.inputClear();
+  tap(s, mt, K_2, now, 100);
+  const char* text;
+  bool replace;
+  CHECK(!mt.feed(K_ADD, false, now, text, replace));
+  tap(s, mt, K_2, now, 100);
+  CHECK(!strcmp(s.input(), "aa"));
+}
+
+static void testWav() {
+  uint8_t h[WAV_HEADER_BYTES];
+  wavHeader(h, 32000, 16000);
+  CHECK(!memcmp(h, "RIFF", 4) && !memcmp(h + 8, "WAVEfmt ", 8) && !memcmp(h + 36, "data", 4));
+  CHECK(h[4] == ((36 + 32000) & 0xFF) && h[5] == ((36 + 32000) >> 8));
+  CHECK(h[24] == (16000 & 0xFF) && h[25] == (16000 >> 8));  // Abtastrate
+  CHECK(h[22] == 1 && h[34] == 16);                         // mono, 16 Bit
+  CHECK(h[40] == (32000 & 0xFF) && h[41] == (32000 >> 8));  // Datenlaenge
+
+  // Gleichanteil weg, verstaerkt, begrenzt
+  int16_t s[4] = {110, 90, 110, 90};
+  wavAmplify(s, 4, 4);
+  CHECK(s[0] == 40 && s[1] == -40);
+  int16_t loud[2] = {20000, -20000};
+  wavAmplify(loud, 2, 4);
+  CHECK(loud[0] == 32767 && loud[1] == -32768);
+}
+
 int main() {
   testCalc();
   testScreen();
+  testMultiTap();
+  testWav();
   if (failures) {
     printf("%d Fehler\n", failures);
     return 1;

@@ -40,6 +40,9 @@ class Screen {
   void inputAppend(const char* text);
   void inputBackspace();  // entfernt das letzte UTF-8-Zeichen
   void inputClear();
+  // Letztes Zeichen ist noch in der Mehrfachtipp-Auswahl (Display markiert es).
+  bool inputMarked() const { return marked_; }
+  void setInputMarked(bool on);
 
   // Anzahl je angehaengter Zeilen (zaehlt weiter, wenn der Puffer ueberlaeuft).
   uint32_t totalLines() const { return total_; }
@@ -60,6 +63,7 @@ class Screen {
   uint16_t scroll_ = 0;
   char status_[LINE_BYTES] = "";
   char input_[INPUT_BYTES] = "";
+  bool marked_ = false;
   uint32_t version_ = 0;
 };
 

@@ -78,7 +78,28 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 6. Einbau ohne Loecher: OTA, Watchdog, Tiefschlaf sind geschrieben (kompiliert, Simulator getestet).
    Offen: Gehaeuse-Innenmasse (Hoehe XIAO+Sense ~15 mm!), Platz fuer Qi-Spule + Akku an der
    Rueckwand, Abstand Spule-Mappe (< ~5 mm), Ruhestrom im Tiefschlaf und des Qi-Senders messen.
-7. Spaeter, wenn Hardware und Firmware laufen: eigene Android-App (.apk) statt Termux.
-   Ruft die Claude-API direkt auf (API-Key noetig, Abo geht nur mit Claude Code), kann als
-   Hintergrunddienst laufen und spaeter Bluetooth LE (sparsamer als WLAN). Spracherkennung
-   dann neu loesen. Build per GitHub Actions. Bis dahin Termux-Bridge.
+7. Spaeter, wenn Hardware und Firmware laufen: eine eigene Android-App (.apk) statt Termux,
+   fuer alles, nicht eine APK pro Aufgabe. Bis dahin Termux-Bridge.
+   - Aufbau: Kern (Hintergrunddienst, Anmeldung, ein gesicherter Kanal) + Module, per
+     App-Update erweiterbar, einzeln ein-/ausschaltbar mit eigener Erlaubnis. Laptop-Seite:
+     kleines CLI oder Weboberflaeche (`deck push datei.pdf`, `deck standort`, ...).
+   - Module: Casio-Bridge (ruft die Claude-API direkt: API-Key noetig, Abo geht nur mit
+     Claude Code; Spracherkennung neu loesen; spaeter Bluetooth LE zum Rechner), Dateien in
+     beide Richtungen, Sensoren/Standort, Zeitachse (eigene Standortaufzeichnung als Ersatz
+     fuer Google Maps; Export an Dawarich im OwnTracks-Format, Google-Export importieren,
+     Claude kann per Werkzeug darauf zugreifen), Handy-Infos/Verwalten.
+   - Grenzen ohne Root: keine stillen App-Installationen/Systemeinstellungen, keine Daten
+     anderer Apps, Kamera/Mikro im Hintergrund nur mit sichtbarer Benachrichtigung.
+   - Verbindung Laptop <-> Handy: Handy im Mobilfunk ist von aussen nicht erreichbar, es
+     baut immer selbst die Verbindung zu einem Treffpunkt auf. Anschluss zu Hause ist Kabel
+     (vermutlich DS-Lite, Fritzbox dann nur per IPv6 erreichbar). Optionen: Tailscale,
+     WireGuard ueber Fritzbox (nur mit IPv6 ueberall), kleiner VPS, Syncthing fuer Dateien.
+     Nur im eigenen VPN erreichbar, nur mit Schluessel, nie offene Ports.
+   - Akku (wie beim Rechner, nur online wenn noetig): Casio-Bridge nur bei eingeschaltetem
+     Hotspot (sonst Wake-Lock frei). Fernzugriff aus, Push weckt (FCM am sparsamsten,
+     UnifiedPush/ntfy ohne Google), dann Live-Modus mit Zeitlimit (~10 min), beim Laden
+     optional dauerhaft. Briefkasten: Auftraege alle 15-30 min abholen. Grosse Uebertragungen
+     (Fotos, Zeitachse, Sensoren) gesammelt, nur im WLAN oder beim Laden. Wirkung mit der
+     Akku-Statistik von Android messen.
+   - Updates: GitHub Actions baut Firmware und APK; die App holt sie und gibt Firmware-Updates
+     ueber den Hotspot an den Rechner (Bestaetigung am Rechner, Rollback vorhanden).

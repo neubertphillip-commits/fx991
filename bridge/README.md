@@ -27,6 +27,27 @@ WebSocket-Server auf dem Handy (Termux). Nimmt Prompts/Bilder vom ESP32 an, frag
    python bridge.py --cols 60
    ```
 
+## Handy-Display aus
+
+Die Bridge muss auch mit ausgeschaltetem Display und in der Hosentasche erreichbar
+bleiben. Android legt Hintergrund-Apps gern schlafen; einmal einstellen:
+
+1. **`termux-wake-lock`** vor dem Start (siehe oben). Termux zeigt dann eine dauerhafte
+   Benachrichtigung und die CPU schlaeft nicht ganz ein. Kostet etwas Handy-Akku.
+2. **Akku-Optimierung fuer Termux aus:** Einstellungen -> Apps -> Termux -> Akku ->
+   "Nicht eingeschraenkt"/"Nicht optimieren". Bei Samsung zusaetzlich Termux aus den
+   "Schlafenden Apps" nehmen, bei Xiaomi "Autostart" erlauben
+   (Hersteller-Tipps: https://dontkillmyapp.com).
+3. **Hotspot nicht automatisch abschalten:** Der Rechner verbindet sich nur bei Bedarf,
+   dazwischen ist kein Geraet im Hotspot. Viele Handys schalten ihn dann nach 5-10 min
+   ab. In den Hotspot-Einstellungen "Automatisch ausschalten" bzw. "Hotspot automatisch
+   deaktivieren" ausschalten.
+4. **Datensparmodus:** Termux "uneingeschraenkte Datennutzung" erlauben, sonst kommt
+   `claude` im Hintergrund nicht ins Internet.
+
+Die Adresse der Bridge findet der Rechner selbst (Gateway des Hotspots), auch wenn
+Android das Hotspot-Netz bei jedem Einschalten neu waehlt.
+
 ## Testen ohne Taschenrechner
 
 IP des Handys im Hotspot herausfinden (`ifconfig` in Termux), dann vom Laptop:

@@ -26,7 +26,8 @@ bool wantOn = false;
 bool wsStarted = false;
 bool wsConnected = false;
 uint32_t connectStart = 0;
-const char* bridgeHost = BRIDGE_HOST;
+const char* bridgeHost = BRIDGE_HOST;  // leer = Gateway (das Handy mit dem Hotspot)
+char activeHost[40] = "";              // tatsaechlich verwendete Adresse
 uint16_t bridgePort = BRIDGE_PORT;
 bool fastAttempt = false;
 bool deepPs = false;   // sparsamer Wartemodus des Funkmoduls aktiv
@@ -45,7 +46,7 @@ void onWsEvent(WStype_t type, uint8_t* payload, size_t length) {
     case WStype_CONNECTED:
       wsConnected = true;
       noteTx();  // gleich wird gesendet: noch nicht in den Wartemodus
-      Serial.printf("[net] Bridge verbunden (%s:%u)\n", bridgeHost, bridgePort);
+      Serial.printf("[net] Bridge verbunden (%s:%u)\n", activeHost, bridgePort);
       break;
     case WStype_DISCONNECTED:
       if (wsConnected) Serial.println("[net] Bridge getrennt");
@@ -203,7 +204,11 @@ void loop() {
       memcpy(savedBssid, bssid, sizeof(savedBssid));
       savedChannel = WiFi.channel();
     }
-    ws.begin(bridgeHost, bridgePort, "/");
+    // Die Bridge laeuft auf dem Handy, das den Hotspot macht: dessen Adresse ist das
+    // Gateway, auch wenn Android das Hotspot-Netz bei jedem Einschalten neu waehlt.
+    if (bridgeHost[0]) snprintf(activeHost, sizeof(activeHost), "%s", bridgeHost);
+    else snprintf(activeHost, sizeof(activeHost), "%s", WiFi.gatewayIP().toString().c_str());
+    ws.begin(activeHost, bridgePort, "/");
     ws.onEvent(onWsEvent);
     ws.setReconnectInterval(3000);
     ws.enableHeartbeat(15000, 3000, 2);  // WebSocket-Ping, erkennt tote Verbindungen

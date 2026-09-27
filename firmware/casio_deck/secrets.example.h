@@ -4,8 +4,10 @@
 #define WIFI_SSID "HandyHotspot"
 #define WIFI_PASS "geheim"
 
-// IP des Handys im eigenen Hotspot (Android meist 192.168.x.1, `ifconfig` in Termux)
-#define BRIDGE_HOST "192.168.43.1"
+// Adresse der Bridge. Leer = das Handy, das den Hotspot macht (Gateway). Empfohlen:
+// Android waehlt das Hotspot-Netz seit Version 11 bei jedem Einschalten neu, eine feste
+// IP stimmt dann nicht mehr. Feste IP nur, wenn die Bridge auf einem anderen Geraet laeuft.
+#define BRIDGE_HOST ""
 
 // Passwort fuer Firmware-Updates per WLAN (OTA). Beim Hochladen mit angeben,
 // siehe firmware/README.md. Weglassen = Updates ohne Passwort.

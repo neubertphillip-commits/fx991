@@ -40,6 +40,7 @@ class SimWiFi {
     return begun_ && millis() - since_ > 500 ? WL_CONNECTED : WL_DISCONNECTED;
   }
   SimIPAddress localIP() const { return SimIPAddress(); }
+  SimIPAddress gatewayIP() const { return SimIPAddress(); }
 
  private:
   bool begun_ = false;

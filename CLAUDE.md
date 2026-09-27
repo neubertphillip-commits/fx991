@@ -78,3 +78,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 6. Einbau ohne Loecher: OTA, Watchdog, Tiefschlaf sind geschrieben (kompiliert, Simulator getestet).
    Offen: Gehaeuse-Innenmasse (Hoehe XIAO+Sense ~15 mm!), Platz fuer Qi-Spule + Akku an der
    Rueckwand, Abstand Spule-Mappe (< ~5 mm), Ruhestrom im Tiefschlaf und des Qi-Senders messen.
+7. Spaeter, wenn Hardware und Firmware laufen: eigene Android-App (.apk) statt Termux.
+   Ruft die Claude-API direkt auf (API-Key noetig, Abo geht nur mit Claude Code), kann als
+   Hintergrunddienst laufen und spaeter Bluetooth LE (sparsamer als WLAN). Spracherkennung
+   dann neu loesen. Build per GitHub Actions. Bis dahin Termux-Bridge.

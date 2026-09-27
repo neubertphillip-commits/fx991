@@ -49,6 +49,30 @@ Oder mit dem PC-Simulator der Firmware, der sich wie der Taschenrechner bedient
 | `--allow 192.168.x.y` | nur diese Client-IP zulassen |
 | `--auto-image` | Bild sofort auswerten, ohne auf eine Frage zu warten |
 | `--stt "BEFEHL {file}"` | Spracherkennung fuer die Spracheingabe (siehe unten), auch per `CASIO_STT` |
+| `--files ORDNER` | Ordner fuer den Datei-Viewer (Standard `~/.casio-deck/files`), auch per `CASIO_FILES` |
+
+## Dateien fuer den Viewer
+
+Was im Ordner `--files` liegt, holt sich der Rechner im Modus DATEIEN mit
+`[Mit Handy abgleichen]`. Am bequemsten ist ein Ordner im normalen Handyspeicher,
+dann lassen sich Dateien mit jedem Dateimanager oder per "Teilen" hineinlegen:
+
+```sh
+termux-setup-storage                      # einmal: Zugriff auf den Handyspeicher erlauben
+mkdir -p ~/storage/shared/CasioDeck
+python bridge.py --files ~/storage/shared/CasioDeck
+```
+
+Aufbereitet wird automatisch: Text wird UTF-8, PDFs werden Text, Bilder werden auf
+480x640 verkleinert. Dafuer (optional):
+
+```sh
+pkg install poppler            # pdftotext fuer PDFs
+pip install pillow             # Bilder verkleinern (ohne: nur kleine JPEGs unveraendert)
+```
+
+Unterordner und andere Dateitypen werden uebersprungen; die Bridge meldet sie beim Abgleich.
+Tests: `python3 -m unittest test_library`.
 
 ## Spracheingabe (optional)
 
@@ -84,3 +108,6 @@ Siehe Docstring in `bridge.py`. Kurz: ESP32 schickt `{"t":"prompt","text":"..."}
 ein JPEG als Binaer-Frame, Bridge antwortet mit `busy`, beliebig vielen `line` und `done`.
 Ein WAV als Binaer-Frame (erkannt an `RIFF....WAVE`) beantwortet sie mit `busy`,
 `text` (erkannte Sprache) und `done`.
+Der Datei-Abgleich (`{"t":"sync"}`) wird mit `del` (Datei loeschen), `file` (Name,
+Groesse) plus Binaer-Frames mit dem Inhalt, einer Zusammenfassung als `line` und `done`
+beantwortet.

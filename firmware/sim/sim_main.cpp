@@ -14,6 +14,7 @@
 
 #include "../casio_deck/app.h"
 #include "../casio_deck/net.h"
+#include "../casio_deck/store.h"
 #include "Arduino.h"
 #include "sim.h"
 
@@ -144,7 +145,9 @@ void pollKeyboard() {
 void onSignal(int) { quit = 1; }
 
 void usage(const char* prog) {
-  fprintf(stderr, "Aufruf: %s [--host HOST] [--port PORT] [--cam BILD.jpg] [--mic SPRACHE.wav]\n",
+  fprintf(stderr,
+          "Aufruf: %s [--host HOST] [--port PORT] [--cam BILD.jpg] [--mic SPRACHE.wav]\n"
+          "          [--files ORDNER]   (Dateispeicher, Standard: ./sim-files)\n",
           prog);
   exit(2);
 }
@@ -168,6 +171,7 @@ int main(int argc, char** argv) {
     else if (!strcmp(argv[i], "--port") && i + 1 < argc) port = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--cam") && i + 1 < argc) sim::cameraImage = argv[++i];
     else if (!strcmp(argv[i], "--mic") && i + 1 < argc) sim::micFile = argv[++i];
+    else if (!strcmp(argv[i], "--files") && i + 1 < argc) store::setRoot(argv[++i]);
     else usage(argv[0]);
   }
   if (!isatty(STDIN_FILENO)) {

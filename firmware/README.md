@@ -70,6 +70,7 @@ cd sim && make                      # holt beim ersten Mal ArduinoJson per git
 ./casio-sim --host 192.168.43.1     # Bridge auf dem Handy
 ./casio-sim --cam foto.jpg          # Kameramodus schickt diese Datei
 ./casio-sim --mic sprache.wav       # Spracheingabe "nimmt" diese Datei auf (16 kHz mono)
+./casio-sim --files ordner          # Dateispeicher des Viewers (Standard: ./sim-files)
 ```
 
 Die Bridge laesst sich auch auf dem Laptop starten (`python bridge.py`), dann braucht
@@ -124,17 +125,18 @@ MCP23017: A0-A2 an GND (0x20), RESET an 3V3.
 
 ## Modi
 
-| Taste | Rechner | Terminal | Kamera |
-|---|---|---|---|
-| MODE | -> Terminal | -> Kamera | -> Rechner |
-| EXE | ausrechnen | Prompt an Claude | Foto + Eingabe als Frage an Claude |
-| AC | Eingabe loeschen | Eingabe loeschen, bei leerer Eingabe neue Sitzung | |
-| DEL | letztes Zeichen | letztes Zeichen | |
-| UP/DOWN | blaettern, mit SHIFT seitenweise | wie Rechner | wie Rechner |
-| SHIFT+MODE | DEG/RAD | WLAN 5 min an (Update) | WLAN 5 min an (Update) |
-| SHIFT+AC | ausschalten | ausschalten | ausschalten |
-| ALPHA | Ziffern/Buchstaben umschalten | wie Rechner | wie Rechner |
-| SHIFT+ALPHA | | Spracheingabe | Spracheingabe (Frage zum Foto) |
+| Taste | Rechner | Terminal | Kamera | Dateien |
+|---|---|---|---|---|
+| MODE | -> Terminal | -> Kamera | -> Dateien | -> Rechner |
+| EXE | ausrechnen | Prompt an Claude | Foto + Eingabe als Frage an Claude | oeffnen / naechste Seite |
+| AC | Eingabe loeschen | Eingabe loeschen, bei leerer Eingabe neue Sitzung | | zurueck zur Liste |
+| DEL | letztes Zeichen | letztes Zeichen | | |
+| UP/DOWN | blaettern, mit SHIFT seitenweise | wie Rechner | wie Rechner | waehlen bzw. blaettern, SHIFT seitenweise |
+| LEFT/RIGHT | | | | Seite zurueck/vor |
+| SHIFT+MODE | DEG/RAD | WLAN 5 min an (Update) | WLAN 5 min an (Update) | WLAN 5 min an |
+| SHIFT+AC | ausschalten | ausschalten | ausschalten | ausschalten |
+| ALPHA | Ziffern/Buchstaben umschalten | wie Rechner | wie Rechner | |
+| SHIFT+ALPHA | | Spracheingabe | Spracheingabe (Frage zum Foto) | |
 
 ## Spracheingabe
 
@@ -168,6 +170,26 @@ Beim Wechsel in den Kameramodus geht die Kamera an, beim Verlassen wieder aus. E
 ein Foto (SVGA, JPEG) auf, schickt es als Binaer-Frame an die Bridge und danach die
 Eingabe als Frage; ohne Eingabe beschreibt Claude das Bild. Aufloesung, Qualitaet und
 Spiegelung stehen in `config.h` (`CAM_*`).
+
+## Dateien (Viewer)
+
+Texte, PDFs und Bilder vom Handy offline lesen. Auf dem Handy kommen sie in einen
+Ordner der Bridge (`--files`, siehe `bridge/README.md`). Im Modus DATEIEN holt EXE
+auf `[Mit Handy abgleichen]` sie auf den Rechner: Die Bridge schickt nur neue und
+geaenderte Dateien (Vergleich per CRC-32) und loescht auf dem Rechner, was im Ordner
+nicht mehr liegt. Das WLAN ist nur waehrend des Abgleichs an.
+
+- **Text** (.txt, .md, .csv, Quelltext ...): Die Bridge macht UTF-8 daraus. Der Rechner
+  bricht selbst auf 60 Zeichen um und merkt sich nur, wo jede Anzeigezeile beginnt;
+  die Datei bleibt im Flash, auch grosse Texte brauchen kaum RAM.
+- **PDF**: Die Bridge zieht den Text heraus (`pdftotext`) und fuegt die Zeilen zu Absaetzen
+  zusammen. Eingescannte PDFs ohne Text werden uebersprungen.
+- **Bilder** (.jpg, .png, .webp ...): Die Bridge verkleinert sie auf hoechstens 480x640
+  als JPEG (Pillow). Anzeigen kann sie erst der LT7680-Treiber (`display::showJpeg`);
+  bis dahin zeigt der Viewer Name und Groesse.
+
+Gespeichert wird im LittleFS (Partition `spiffs`, 1,5 MB, bleibt bei Updates per WLAN
+erhalten). Passt eine Datei nicht mehr, laesst die Bridge sie aus und meldet es.
 
 ## WLAN nur bei Bedarf
 
@@ -208,10 +230,11 @@ gemessen ist (Multimeter in die Akkuleitung).
 ## Serieller Monitor (115200 Baud)
 
 Jede Zeile wird im aktuellen Modus eingegeben und mit EXE abgeschickt, so laesst sich
-alles ohne Tastatur testen. Befehle: `:calc` `:term` `:cam` (Modus), `:keys`
+alles ohne Tastatur testen. Befehle: `:calc` `:term` `:cam` `:files` (Modus), `:keys`
 (alle Tastenereignisse protokollieren), `:new`, `:ping`,
 `:key NAME` (Taste druecken, z.B. `:key EXE`, `:key sin`), `:rec` (Spracheingabe
-starten/abschicken), `:ota` (WLAN 5 min an), `:off` (ausschalten), `:help`.
+starten/abschicken), `:sync` (Dateien abgleichen), `:ota` (WLAN 5 min an),
+`:off` (ausschalten), `:help`.
 
 ## Tastaturmatrix ausmessen
 
@@ -234,4 +257,4 @@ Zeilen bleiben.
 - Mikrofon auf echter Hardware testen (`MIC_GAIN`, Schall durchs Gehaeuse)
 - Cursor in der Eingabezeile (LEFT/RIGHT zum Editieren)
 - Stromverbrauch im Tiefschlaf messen; Display/Kamera ggf. hart abschalten
-- CPU-Takt reduzieren, Light-Sleep im Rechnermodus
+- Bilder im Viewer anzeigen (mit dem LT7680-Treiber)

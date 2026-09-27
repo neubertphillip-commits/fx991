@@ -92,6 +92,8 @@ namespace display {
 
 void begin() {}
 
+bool showJpeg(const uint8_t*, size_t) { return false; }
+
 void power(bool on) {
   if (on) {
     shown = nullptr;  // alles neu zeichnen

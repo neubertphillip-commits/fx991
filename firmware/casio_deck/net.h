@@ -15,10 +15,13 @@ enum class State : uint8_t {
 };
 
 // Wird fuer jede Nachricht der Bridge aufgerufen: type = "busy", "line", "done",
-// "err", "pong", "text" (erkannte Sprache); text ist bei Nachrichten ohne Text leer.
-using MessageHandler = void (*)(const char* type, const char* text);
+// "err", "pong", "text" (erkannte Sprache), beim Abgleich "del" und "file";
+// text ist bei Nachrichten ohne Text leer, size nur bei "file" gesetzt.
+using MessageHandler = void (*)(const char* type, const char* text, uint32_t size);
+// Binaer-Frames der Bridge (Inhalt der zuletzt angekuendigten Datei, in Stuecken).
+using BinaryHandler = void (*)(const uint8_t* data, size_t len);
 
-void begin(MessageHandler handler);
+void begin(MessageHandler handler, BinaryHandler binary);
 
 // Bridge-Adresse aendern (Standard aus secrets.h); z.B. fuer den PC-Simulator.
 void setBridge(const char* host, uint16_t port);
@@ -40,5 +43,14 @@ bool sendNew();
 bool sendPing();
 // Binaer-Frame: JPEG (Kamera) oder WAV (Spracheingabe); die Bridge erkennt es am Inhalt.
 bool sendBinary(const uint8_t* data, size_t len);
+
+// Datei-Abgleich: meldet die vorhandenen Dateien (Name, Groesse, CRC-32) und den
+// freien Platz; die Bridge antwortet mit "del"/"file"-Nachrichten und "done".
+struct FileInfo {
+  const char* name;
+  uint32_t size;
+  uint32_t crc;
+};
+bool sendSync(const FileInfo* files, size_t count, uint32_t freeBytes);
 
 }  // namespace net

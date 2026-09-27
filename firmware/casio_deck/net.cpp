@@ -2,6 +2,9 @@
 
 #include <Arduino.h>
 #include <string.h>
+
+#include <vector>
+
 #include <ArduinoJson.h>
 #include <WebSocketsClient.h>
 #include <WiFi.h>
@@ -18,6 +21,7 @@ namespace {
 
 WebSocketsClient ws;
 net::MessageHandler handler = nullptr;
+net::BinaryHandler binaryHandler = nullptr;
 bool wantOn = false;
 bool wsStarted = false;
 bool wsConnected = false;
@@ -55,9 +59,13 @@ void onWsEvent(WStype_t type, uint8_t* payload, size_t length) {
       }
       const char* t = doc["t"] | "";
       const char* text = doc["text"] | "";
-      if (handler) handler(t, text);
+      uint32_t size = doc["size"] | 0u;
+      if (handler) handler(t, text, size);
       break;
     }
+    case WStype_BIN:
+      if (binaryHandler) binaryHandler(payload, length);
+      break;
     default:
       break;
   }
@@ -125,8 +133,9 @@ bool sendJson(JsonDocument& doc) {
 
 namespace net {
 
-void begin(MessageHandler h) {
+void begin(MessageHandler h, BinaryHandler b) {
   handler = h;
+  binaryHandler = b;
   WiFi.persistent(false);  // Zugangsdaten nicht bei jedem begin() ins Flash schreiben
   WiFi.mode(WIFI_OFF);
 }
@@ -229,6 +238,25 @@ bool sendBinary(const uint8_t* data, size_t len) {
   if (!wsConnected) return false;
   noteTx();
   return ws.sendBIN(data, len);
+}
+
+bool sendSync(const FileInfo* files, size_t count, uint32_t freeBytes) {
+  if (!wsConnected) return false;
+  JsonDocument doc;
+  doc["t"] = "sync";
+  doc["free"] = freeBytes;
+  JsonArray have = doc["have"].to<JsonArray>();
+  for (size_t i = 0; i < count; i++) {
+    JsonArray f = have.add<JsonArray>();
+    f.add(files[i].name);
+    f.add(files[i].size);
+    f.add(files[i].crc);
+  }
+  // Die Liste kann lang werden: Puffer passend auf dem Heap statt fester Groesse
+  std::vector<char> out(measureJson(doc) + 1);
+  size_t len = serializeJson(doc, out.data(), out.size());
+  noteTx();
+  return len > 0 && ws.sendTXT(out.data(), len);
 }
 
 }  // namespace net

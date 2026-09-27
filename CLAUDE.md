@@ -53,6 +53,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
   Safe-Case-Mappe (Rechner liegt mit der Rueckseite darin). USB-C des XIAO ist nach dem Einbau
   nicht erreichbar -> Firmware-Updates per WLAN (OTA) mit automatischem Rollback.
 - Aus = Tiefschlaf (SHIFT+AC oder 10 min), Wecken per Taste ueber INTA (D0, RTC-faehig). Watchdog 30 s.
+- Datei-Viewer (Modus DATEIEN): Ordner auf dem Handy (`bridge.py --files`), Abgleich per
+  CRC-32 ins LittleFS (1,5 MB). Bridge macht PDF -> Text, Bilder -> JPEG 480x640.
+  Rechner bricht Text selbst um (nur Zeilenanfaenge im RAM). Bilder erst mit LT7680-Treiber.
 - Spracheingabe: PDM-Mikro der Sense-Platine -> WAV als Binaer-Frame -> Bridge wandelt per `--stt`
   (whisper.cpp) in Text. `claude -p` nimmt kein Audio. Optional: ohne `--stt` laeuft alles andere normal.
 
@@ -69,7 +72,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 1. Tastaturmatrix des fx-991DE CW ausmessen, Zeilen/Spalten dokumentieren. Die CW-Tasten heissen
    teils anders als die logischen Tasten der Firmware (K_MODE, K_ALPHA, ...); Zuordnung beim Ausmessen.
 2. ~~Firmware-Grundgeruest~~ steht inkl. ALPHA-Mehrfachtippen (kompiliert, im Simulator getestet, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt.
-3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`).
+3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`, inkl. `showJpeg`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.
 5. ~~Spracheingabe~~ geschrieben (Simulator + Bridge getestet, whisper.cpp in Termux und Mikro ungetestet).
 6. Einbau ohne Loecher: OTA, Watchdog, Tiefschlaf sind geschrieben (kompiliert, Simulator getestet).

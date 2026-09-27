@@ -4,9 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+#include <vector>
+
 #include "../casio_deck/calc.h"
+#include "../casio_deck/crc32.h"
 #include "../casio_deck/multitap.h"
 #include "../casio_deck/screen.h"
+#include "../casio_deck/viewer.h"
 #include "../casio_deck/wav.h"
 
 static int failures = 0;
@@ -201,11 +206,86 @@ static void testWav() {
   CHECK(loud[0] == 32767 && loud[1] == -32768);
 }
 
+static void testCrc32() {
+  const char* s = "123456789";
+  CHECK(crc32Update(0, reinterpret_cast<const uint8_t*>(s), 9) == 0xCBF43926u);
+  uint32_t c = crc32Update(0, reinterpret_cast<const uint8_t*>(s), 4);
+  CHECK(crc32Update(c, reinterpret_cast<const uint8_t*>(s) + 4, 5) == 0xCBF43926u);
+  CHECK(crc32Update(0, nullptr, 0) == 0);
+}
+
+// Umbricht `text` und liefert die bereinigten Anzeigezeilen; byteweise gefuettert
+// muss dasselbe herauskommen wie am Stueck.
+static std::vector<std::string> layoutLines(const std::string& text, uint8_t cols, size_t maxBytes) {
+  TextLayout whole(cols, maxBytes), bytes(cols, maxBytes);
+  const uint8_t* d = reinterpret_cast<const uint8_t*>(text.data());
+  whole.feed(d, text.size());
+  whole.finish();
+  for (size_t i = 0; i < text.size(); i++) bytes.feed(d + i, 1);
+  bytes.finish();
+  CHECK(whole.lines() == bytes.lines());
+  std::vector<std::string> out;
+  for (size_t i = 0; i < whole.lines(); i++) {
+    CHECK(i >= bytes.lines() || whole.start(i) == bytes.start(i));
+    char line[256];
+    textLineClean(d + whole.start(i), whole.end(i) - whole.start(i), line, sizeof(line));
+    out.push_back(line);
+  }
+  return out;
+}
+
+static bool sameLines(const std::vector<std::string>& got, std::vector<std::string> want) {
+  if (got == want) return true;
+  printf("  bekommen:");
+  for (const auto& l : got) printf(" [%s]", l.c_str());
+  printf("\n");
+  return false;
+}
+
+static void testTextLayout() {
+  CHECK(sameLines(layoutLines("hallo welt wie geht es", 10, 20), {"hallo welt", "wie geht", "es"}));
+  CHECK(sameLines(layoutLines("abcdefghijklmno", 10, 20), {"abcdefghij", "klmno"}));
+  CHECK(sameLines(layoutLines("a\n\nb\n", 10, 20), {"a", "", "b"}));
+  CHECK(sameLines(layoutLines("ab\r\ncd", 10, 20), {"ab", "cd"}));
+  CHECK(sameLines(layoutLines("", 10, 20), {""}));
+  CHECK(sameLines(layoutLines("x\ty  ", 10, 20), {"x y"}));
+  // UTF-8: nach Zeichen umbrechen, nie mitten im Zeichen; Byte-Grenze beachten
+  CHECK(sameLines(layoutLines("ääääääääääää", 10, 20), {"ääääääääää", "ää"}));
+  CHECK(sameLines(layoutLines("ääääääääääää", 10, 15), {"äääääää", "äääää"}));
+  // langes Wort nach kurzem: Wort wandert in die naechste Zeile
+  CHECK(sameLines(layoutLines("ab cdefghijkl", 10, 20), {"ab", "cdefghijkl"}));
+
+  // Zeile auf Displaybreite, Standardwerte
+  std::string longText;
+  for (int i = 0; i < 100; i++) longText += "wort ";
+  std::vector<std::string> lines = layoutLines(longText, Screen::COLS, Screen::LINE_BYTES - 1);
+  CHECK(lines.size() == 9);  // 100 x 5 Zeichen, 60 je Zeile = 12 Woerter je Zeile
+  for (const auto& l : lines) CHECK(l.size() <= Screen::COLS);
+
+  char out[3];
+  const uint8_t ae[] = {'a', 0xC3, 0xA4};
+  textLineClean(ae, sizeof(ae), out, sizeof(out));
+  CHECK(!strcmp(out, "a"));  // halbes 'ae' abgeschnitten
+}
+
+static void testJpegSize() {
+  const uint8_t jpg[] = {0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x04, 0x00, 0x00, 0xFF, 0xC0, 0x00, 0x11,
+                         0x08, 0x01, 0xE0, 0x02, 0x80, 0x03};
+  uint16_t w = 0, h = 0;
+  CHECK(jpegSize(jpg, sizeof(jpg), w, h) && w == 640 && h == 480);
+  const uint8_t bad[] = {0x89, 'P', 'N', 'G'};
+  CHECK(!jpegSize(bad, sizeof(bad), w, h));
+  CHECK(!jpegSize(jpg, 8, w, h));  // abgeschnitten vor dem SOF
+}
+
 int main() {
   testCalc();
   testScreen();
   testMultiTap();
   testWav();
+  testCrc32();
+  testTextLayout();
+  testJpegSize();
   if (failures) {
     printf("%d Fehler\n", failures);
     return 1;

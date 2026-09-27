@@ -1,6 +1,7 @@
 #include "app.h"
 
 #include <Arduino.h>
+#include <stdarg.h>
 #include <string.h>
 #include <strings.h>
 
@@ -17,6 +18,8 @@
 #include "ota.h"
 #include "power.h"
 #include "screen.h"
+#include "store.h"
+#include "viewer.h"
 
 namespace {
 
@@ -24,17 +27,18 @@ namespace {
 // Kamera: Foto (+ optional Frage) an die Bridge.
 // Spracheingabe (Terminal/Kamera): SHIFT+ALPHA startet, EXE oder SHIFT+ALPHA schickt,
 // AC verwirft; die Bridge schickt den erkannten Text zurueck in die Eingabezeile.
-// MODE wechselt reihum; auf dem seriellen Monitor auch :calc, :term, :cam.
+// Dateien: Texte und Bilder vom Handy (Ordner der Bridge) offline lesen.
+// MODE wechselt reihum; auf dem seriellen Monitor auch :calc, :term, :cam, :files.
 // SHIFT+AC schaltet aus (Tiefschlaf), eine beliebige Taste wieder ein.
-enum class Mode : uint8_t { Calc, Terminal, Camera };
-constexpr uint8_t MODE_COUNT = 3;
-const char* const MODE_NAMES[MODE_COUNT] = {"RECHNER", "TERMINAL", "KAMERA"};
+enum class Mode : uint8_t { Calc, Terminal, Camera, Files };
+constexpr uint8_t MODE_COUNT = 4;
+const char* const MODE_NAMES[MODE_COUNT] = {"RECHNER", "TERMINAL", "KAMERA", "DATEIEN"};
 
 // RTC_DATA_ATTR: bleibt im Tiefschlaf erhalten (nicht bei leerem Akku)
 RTC_DATA_ATTR Mode mode = Mode::Calc;
 Screen screens[MODE_COUNT];
 // ALPHA-Zustand je Modus: im Terminal und bei der Kamera-Frage meist Text.
-RTC_DATA_ATTR bool alpha[MODE_COUNT] = {false, true, true};
+RTC_DATA_ATTR bool alpha[MODE_COUNT] = {false, true, true, false};
 
 bool keypadOk = false;
 bool logKeys = false;  // alle Tastenereignisse seriell ausgeben
@@ -51,7 +55,7 @@ Mode replyTo = Mode::Terminal;           // wohin die Antwort geschrieben wird
 
 // WLAN ist nur an, wenn es gebraucht wird. Anfragen landen im Postausgang, das WLAN
 // geht an, und sobald die Bridge verbunden ist, wird gesendet.
-enum class Out : uint8_t { None, Prompt, Image, Audio, NewSession };
+enum class Out : uint8_t { None, Prompt, Image, Audio, NewSession, Sync };
 struct Outbox {
   Out kind = Out::None;
   Mode replyTo = Mode::Terminal;
@@ -74,6 +78,26 @@ bool ignoreKeys = false;    // Taste, die aus dem Tiefschlaf geweckt hat, nicht 
 char serialBuf[Screen::INPUT_BYTES];
 size_t serialLen = 0;
 
+// Datei-Viewer: Liste, Textansicht, Abgleich mit dem Ordner auf dem Handy
+struct Files {
+  std::vector<store::Entry> entries;
+  uint32_t freeKb = 0;
+  int sel = 0;           // 0 = "Mit Handy abgleichen", ab 1 die Dateien
+  int top = 0;           // erste sichtbare Listenzeile
+  bool viewing = false;  // eine Datei ist offen
+  bool image = false;
+  char name[store::NAME_LEN + 1] = "";
+  TextLayout layout;
+  size_t first = 0;      // erste sichtbare Textzeile
+  char msg[Screen::LINE_BYTES] = "";
+  bool dirty = true;     // Anzeige neu aufbauen
+  bool syncing = false;  // Abgleich laeuft
+  uint16_t got = 0;
+  uint16_t deleted = 0;
+  uint32_t fileSize = 0;  // gerade empfangene Datei
+  uint32_t received = 0;
+} files;
+
 uint8_t idx(Mode m) { return static_cast<uint8_t>(m); }
 Screen& screen(Mode m) { return screens[idx(m)]; }
 Screen& screen() { return screen(mode); }
@@ -92,6 +116,19 @@ void updateStatus() {
       snprintf(buf, sizeof(buf), "%s %s | %s | WLAN %s%s", MODE_NAMES[0], input,
                degrees ? "DEG" : "RAD", netState, keypadOk ? "" : " | MCP fehlt");
       break;
+    case Mode::Files:
+      if (files.viewing && !files.image) {
+        size_t n = files.layout.lines();
+        size_t last = files.first + Screen::VIEW_ROWS < n ? files.first + Screen::VIEW_ROWS : n;
+        snprintf(buf, sizeof(buf), "%s | %u-%u/%u | %s", MODE_NAMES[idx(Mode::Files)],
+                 static_cast<unsigned>(files.first + 1), static_cast<unsigned>(last),
+                 static_cast<unsigned>(n), files.name);
+      } else {
+        snprintf(buf, sizeof(buf), "%s | %u Dateien, %u kB frei | WLAN %s%s",
+                 MODE_NAMES[idx(Mode::Files)], static_cast<unsigned>(files.entries.size()),
+                 static_cast<unsigned>(files.freeKb), netState, files.syncing ? " | Abgleich" : "");
+      }
+      break;
     default:
       snprintf(buf, sizeof(buf), "%s %s | Bridge %s%s%s", MODE_NAMES[idx(mode)], input, netState,
                busy ? " | denkt..." : "", keypadOk ? "" : " | MCP fehlt");
@@ -102,6 +139,7 @@ void updateStatus() {
 }
 
 void voiceCancel();
+void filesRefresh();
 
 void setMode(Mode m) {
   if (voiceActive) voiceCancel();
@@ -110,6 +148,7 @@ void setMode(Mode m) {
   shift = false;
   multitap.reset();
   if (m == Mode::Camera && !camera::begin()) screen().print(camera::error());
+  if (m == Mode::Files) filesRefresh();
   updateStatus();
 }
 
@@ -120,10 +159,15 @@ void nextMode() { setMode(static_cast<Mode>((idx(mode) + 1) % MODE_COUNT)); }
 // ---------------------------------------------------------------------------
 
 void submit();
+void filesOnBridge(const char* type, const char* text, uint32_t size);
 
-void onBridge(const char* type, const char* text) {
+void onBridge(const char* type, const char* text, uint32_t size) {
   Screen& s = screen(replyTo);
   lastActivity = lastNetUse = millis();
+  if (replyTo == Mode::Files) {  // Antworten zum Datei-Abgleich
+    filesOnBridge(type, text, size);
+    return;
+  }
   if (!strcmp(type, "busy")) {
     busy = true;
   } else if (!strcmp(type, "line")) {
@@ -156,7 +200,7 @@ void onBridge(const char* type, const char* text) {
 
 void voiceStart() {
   Screen& s = screen();
-  if (mode == Mode::Calc) {
+  if (mode == Mode::Calc || mode == Mode::Files) {
     s.print("(Spracheingabe nur im Terminal- und Kameramodus)");
     return;
   }
@@ -196,6 +240,285 @@ void voiceFinish() {
 }
 
 // ---------------------------------------------------------------------------
+// Dateien: Liste, Textansicht mit Umbruch, Abgleich mit dem Ordner auf dem Handy.
+// Die Bridge schickt nur neue und geaenderte Dateien (Vergleich per CRC-32) und
+// loescht, was im Ordner nicht mehr liegt.
+// ---------------------------------------------------------------------------
+
+void sendPending();
+
+constexpr int LIST_ROWS = Screen::VIEW_ROWS - 3;  // darunter: Leerzeile, Meldung, Hilfe
+
+void filesMsg(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+void filesMsg(const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(files.msg, sizeof(files.msg), fmt, ap);
+  va_end(ap);
+  files.dirty = true;
+}
+
+void filesRefresh() {
+  files.entries = store::list();
+  files.freeKb = store::freeBytes() / 1024;
+  int count = static_cast<int>(files.entries.size()) + 1;
+  if (files.sel >= count) files.sel = count - 1;
+  files.dirty = true;
+}
+
+void formatSize(uint32_t bytes, char* out, size_t cap) {
+  if (bytes < 1024) snprintf(out, cap, "%u B", static_cast<unsigned>(bytes));
+  else snprintf(out, cap, "%u kB", static_cast<unsigned>((bytes + 1023) / 1024));
+}
+
+void filesRenderList(Screen& s) {
+  s.clear();
+  int count = static_cast<int>(files.entries.size()) + 1;
+  if (files.sel < files.top) files.top = files.sel;
+  if (files.sel >= files.top + LIST_ROWS) files.top = files.sel - LIST_ROWS + 1;
+  for (int i = files.top; i < count && i < files.top + LIST_ROWS; i++) {
+    char line[Screen::LINE_BYTES];
+    const char* mark = i == files.sel ? ">" : " ";
+    if (i == 0) {
+      snprintf(line, sizeof(line), "%s [Mit Handy abgleichen]", mark);
+    } else {
+      const store::Entry& e = files.entries[i - 1];
+      char size[16];
+      formatSize(e.size, size, sizeof(size));
+      snprintf(line, sizeof(line), "%s %-*s %9s", mark, static_cast<int>(store::NAME_LEN), e.name,
+               size);
+    }
+    s.print(line);
+  }
+  if (files.entries.empty()) s.print("  (noch keine Dateien, EXE auf [Mit Handy abgleichen])");
+  s.print("");
+  s.print(files.msg);
+  s.print("Hoch/Runter waehlen, EXE oeffnen, SHIFT+Hoch/Runter Seite");
+}
+
+// Sichtbare Seite der offenen Textdatei; jede Zeile wird einzeln gelesen.
+void filesRenderText(Screen& s) {
+  s.clear();
+  FILE* f = store::open(files.name);
+  if (!f) {
+    s.print("! Datei nicht lesbar");
+    return;
+  }
+  size_t n = files.layout.lines();
+  for (size_t i = files.first; i < n && i < files.first + Screen::VIEW_ROWS; i++) {
+    uint8_t raw[Screen::LINE_BYTES * 2];
+    uint32_t len = files.layout.end(i) - files.layout.start(i);
+    if (len > sizeof(raw)) len = sizeof(raw);
+    size_t got = 0;
+    if (fseek(f, static_cast<long>(files.layout.start(i)), SEEK_SET) == 0) got = fread(raw, 1, len, f);
+    char line[Screen::LINE_BYTES];
+    textLineClean(raw, got, line, sizeof(line));
+    s.print(line);
+  }
+  fclose(f);
+}
+
+void filesRender() {
+  files.dirty = false;
+  Screen& s = screen(Mode::Files);
+  if (!files.viewing) filesRenderList(s);
+  else if (!files.image) filesRenderText(s);
+  // Bild: Ansicht wurde beim Oeffnen aufgebaut
+}
+
+void filesOpenImage() {
+  Screen& s = screen(Mode::Files);
+  s.clear();
+  FILE* f = store::open(files.name);
+  std::vector<uint8_t> data;
+  if (f) {
+    fseek(f, 0, SEEK_END);
+    long len = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (len > 0) {
+      data.resize(static_cast<size_t>(len));  // grosse Bloecke landen im PSRAM
+      data.resize(fread(data.data(), 1, data.size(), f));
+    }
+    fclose(f);
+  }
+  if (data.empty()) {
+    s.print("! Datei nicht lesbar");
+    return;
+  }
+  if (display::showJpeg(data.data(), data.size())) return;
+  char line[Screen::LINE_BYTES];
+  uint16_t w = 0, h = 0;
+  char size[16];
+  formatSize(static_cast<uint32_t>(data.size()), size, sizeof(size));
+  s.print(files.name);
+  if (jpegSize(data.data(), data.size(), w, h)) {
+    snprintf(line, sizeof(line), "Bild %u x %u Pixel, %s", w, h, size);
+  } else {
+    snprintf(line, sizeof(line), "kein lesbares JPEG (%s)", size);
+  }
+  s.print(line);
+  s.print("");
+  s.print("(Bilder zeigt erst der Display-Treiber, AC zurueck)");
+}
+
+void filesOpenText() {
+  files.layout.reset();
+  FILE* f = store::open(files.name);
+  if (f) {
+    uint8_t buf[512];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0) files.layout.feed(buf, n);
+    fclose(f);
+  }
+  files.layout.finish();
+}
+
+void startSync();
+
+void filesOpen() {
+  if (files.sel == 0) {
+    startSync();
+    return;
+  }
+  const store::Entry& e = files.entries[files.sel - 1];
+  strcpy(files.name, e.name);
+  files.viewing = true;
+  files.first = 0;
+  files.image = store::isImage(files.name);
+  files.dirty = false;
+  if (files.image) {
+    filesOpenImage();
+  } else {
+    filesOpenText();
+    files.dirty = true;
+  }
+}
+
+// Tasten im Dateimodus; false = normal weiterverarbeiten (SHIFT, MODE, SHIFT+AC).
+bool filesKey(Key k, bool wasShift) {
+  if (k == K_SHIFT || k == K_MODE || (k == K_AC && wasShift)) return false;
+  if (k == K_AC) {
+    if (files.viewing) {
+      files.viewing = false;
+      files.layout.reset();  // Speicher der Zeilentabelle freigeben
+      files.dirty = true;
+    }
+    return true;
+  }
+  if (files.viewing) {
+    if (files.image) return true;  // nur AC fuehrt zurueck
+    size_t n = files.layout.lines();
+    size_t page = Screen::VIEW_ROWS - 1;  // eine Zeile Ueberlappung
+    size_t maxFirst = n > Screen::VIEW_ROWS ? n - Screen::VIEW_ROWS : 0;
+    size_t step = 0;
+    bool down = false;
+    switch (k) {
+      case K_DOWN: step = wasShift ? page : 1; down = true; break;
+      case K_UP: step = wasShift ? page : 1; break;
+      case K_EXE: case K_RIGHT: step = page; down = true; break;
+      case K_LEFT: step = page; break;
+      default: return true;
+    }
+    if (down) files.first = files.first + step < maxFirst ? files.first + step : maxFirst;
+    else files.first = files.first > step ? files.first - step : 0;
+    files.dirty = true;
+    return true;
+  }
+  int count = static_cast<int>(files.entries.size()) + 1;
+  int step = wasShift ? LIST_ROWS : 1;
+  switch (k) {
+    case K_DOWN: files.sel = files.sel + step < count ? files.sel + step : count - 1; break;
+    case K_UP: files.sel = files.sel > step ? files.sel - step : 0; break;
+    case K_EXE: case K_RIGHT: filesOpen(); break;
+    default: return true;
+  }
+  files.dirty = true;
+  return true;
+}
+
+// Abgleich beendet (fertig, Fehler oder Verbindung weg)
+void filesSyncEnd(const char* error) {
+  files.syncing = false;
+  busy = false;
+  store::abortWrite();  // halb empfangene Datei verwerfen
+  filesRefresh();
+  if (error) filesMsg("%s", error);
+}
+
+void filesOnBridge(const char* type, const char* text, uint32_t size) {
+  if (!strcmp(type, "busy")) {
+    busy = true;
+  } else if (!strcmp(type, "del")) {
+    if (store::remove(text)) files.deleted++;
+  } else if (!strcmp(type, "file")) {
+    files.fileSize = size;
+    files.received = 0;
+    if (!store::beginWrite(text, size)) {
+      filesMsg("! %s: kann nicht speichern", text);
+    } else {
+      char kb[16];
+      formatSize(size, kb, sizeof(kb));
+      filesMsg("Lade %s (%s) ...", text, kb);
+      if (!store::writing()) files.got++;  // leere Datei, schon fertig
+    }
+  } else if (!strcmp(type, "line")) {
+    Serial.printf("[files] %s\n", text);
+    filesMsg("%s", text);  // die letzte Zeile ist die Zusammenfassung
+  } else if (!strcmp(type, "err")) {
+    filesMsg("! %s", text);
+  } else if (!strcmp(type, "done")) {
+    char keep[Screen::LINE_BYTES];
+    strcpy(keep, files.msg);
+    filesSyncEnd(nullptr);
+    filesMsg("%s", keep);
+  }
+}
+
+// Binaer-Frames der Bridge: Inhalt der zuletzt mit "file" angekuendigten Datei
+void filesOnBinary(const uint8_t* data, size_t len) {
+  if (!files.syncing || !store::writing()) return;
+  lastActivity = lastNetUse = millis();
+  if (!store::write(data, len)) {
+    filesMsg("! Schreibfehler (Speicher voll?)");
+    return;
+  }
+  files.received += static_cast<uint32_t>(len);
+  if (!store::writing()) {
+    files.got++;
+  } else if (files.fileSize > 0) {
+    filesMsg("Lade ... %u %%", static_cast<unsigned>(100ULL * files.received / files.fileSize));
+  }
+}
+
+void startSync() {
+  if (!store::ready()) {
+    filesMsg("! Dateispeicher nicht bereit");
+    return;
+  }
+  if (!queue(Out::Sync, "", nullptr)) {
+    filesMsg("(warte noch auf die letzte Antwort)");
+    return;
+  }
+  files.viewing = false;
+  filesMsg("Abgleich: verbinde mit dem Handy ...");
+  sendPending();
+}
+
+// Liste mit CRC-32 an die Bridge; sie antwortet mit "del", "file" + Daten, "done".
+bool sendSyncRequest() {
+  filesRefresh();
+  std::vector<net::FileInfo> info;
+  info.reserve(files.entries.size());
+  for (const store::Entry& e : files.entries) info.push_back({e.name, e.size, store::crc(e.name)});
+  files.got = files.deleted = 0;
+  files.syncing = true;
+  filesMsg("Abgleich laeuft ...");
+  if (net::sendSync(info.data(), info.size(), store::freeBytes())) return true;
+  files.syncing = false;
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // Postausgang: senden, sobald die Bridge verbunden ist
 // ---------------------------------------------------------------------------
 
@@ -228,7 +551,8 @@ void sendPending() {
   if (outbox.kind == Out::None) return;
   if (net::state() != net::State::Online) {
     if (millis() - outbox.since > NET_GIVEUP_MS) {
-      screen(outbox.replyTo).print("! Bridge nicht erreichbar, Anfrage verworfen");
+      if (outbox.replyTo == Mode::Files) filesMsg("! Bridge nicht erreichbar");
+      else screen(outbox.replyTo).print("! Bridge nicht erreichbar, Anfrage verworfen");
       clearOutbox();
     }
     return;
@@ -246,12 +570,14 @@ void sendPending() {
       break;
     }
     case Out::NewSession: ok = net::sendNew(); break;
+    case Out::Sync: ok = sendSyncRequest(); break;
     case Out::None: break;
   }
   replyTo = outbox.replyTo;
   clearOutbox();
   lastNetUse = millis();
   if (ok) busy = true;
+  else if (replyTo == Mode::Files) filesMsg("! Senden fehlgeschlagen");
   else screen(replyTo).print("! Senden fehlgeschlagen");
 }
 
@@ -320,6 +646,10 @@ void submit() {
     case Mode::Calc: submitCalc(); break;
     case Mode::Terminal: submitTerminal(); break;
     case Mode::Camera: submitCamera(); break;
+    case Mode::Files:
+      screen().inputClear();
+      filesKey(K_EXE, false);
+      break;
   }
 }
 
@@ -351,6 +681,7 @@ void sleepNow() {
   offRequested = false;
   if (voiceActive) voiceCancel();
   clearOutbox();
+  if (files.syncing) filesSyncEnd(nullptr);
   camera::end();
   net::enable(false);
   if (!keypad::armWake()) {  // doch noch eine Taste gedrueckt: gleich nochmal versuchen
@@ -421,6 +752,8 @@ void onKey(Key k) {
     else if (k == K_EXE || k == K_ALPHA) voiceFinish();
     return;
   }
+
+  if (mode == Mode::Files && filesKey(k, wasShift)) return;
 
   // Buchstaben per Mehrfachtippen, SHIFT davor = Grossbuchstabe
   if (alpha[idx(mode)]) {
@@ -511,6 +844,11 @@ void serialCommand(const char* cmd) {
   if (!strcmp(cmd, "calc")) setMode(Mode::Calc);
   else if (!strcmp(cmd, "term")) setMode(Mode::Terminal);
   else if (!strcmp(cmd, "cam")) setMode(Mode::Camera);
+  else if (!strcmp(cmd, "files")) setMode(Mode::Files);
+  else if (!strcmp(cmd, "sync")) {
+    if (mode != Mode::Files) setMode(Mode::Files);
+    startSync();
+  }
   else if (!strcmp(cmd, "keys")) {
     logKeys = !logKeys;
     Serial.printf("[app] Tastenprotokoll %s\n", logKeys ? "an" : "aus");
@@ -533,9 +871,10 @@ void serialCommand(const char* cmd) {
     if (k == K_NONE) Serial.println("[app] unbekannte Taste (Namen wie EXE, AC, SHIFT, 7, sin)");
     else onKey(k);
   } else {
-    Serial.println("Befehle: :calc :term :cam  :keys (Tastenprotokoll)  :ota (WLAN 5 min an)");
+    Serial.println("Befehle: :calc :term :cam :files  :keys (Tastenprotokoll)  :ota (WLAN 5 min an)");
     Serial.println("         :new (neue Claude-Sitzung)  :ping  :key NAME (Taste druecken)");
-    Serial.println("         :rec (Spracheingabe starten/abschicken)  :off (ausschalten)");
+    Serial.println("         :rec (Spracheingabe starten/abschicken)  :sync (Dateien abgleichen)");
+    Serial.println("         :off (ausschalten)");
     Serial.println("Jede andere Zeile wird im aktuellen Modus eingegeben und abgeschickt.");
   }
 }
@@ -583,12 +922,13 @@ void begin() {
   if (!keypadOk) Serial.printf("[key] MCP23017 an 0x%02X antwortet nicht\n", MCP_ADDR);
   ignoreKeys = woke;
 
-  net::begin(onBridge);
+  if (!store::begin()) Serial.println("[files] Dateispeicher nicht verfuegbar");
+  net::begin(onBridge, filesOnBinary);
   ota::begin(onOta);
   setMode(mode);  // nach dem Aufwachen im selben Modus weiter
   lastActivity = millis();
   if (!woke) {
-    screen(Mode::Calc).print("Casio-Deck bereit. MODE wechselt Rechner/Terminal/Kamera.");
+    screen(Mode::Calc).print("Casio-Deck bereit. MODE: Rechner/Terminal/Kamera/Dateien.");
     screen(Mode::Calc).print("SHIFT+AC schaltet aus. Serieller Monitor: ':help'.");
   }
   if (power::updatePending()) {
@@ -609,7 +949,7 @@ bool canNap() {
 void loop() {
   pollKeys();
   pollSerial();
-  net::allowLowPower(busy && !ota::running() && !power::updatePending() &&
+  net::allowLowPower(busy && !files.syncing && !ota::running() && !power::updatePending() &&
                      static_cast<int32_t>(keepOnlineUntil - millis()) <= 0);
   net::loop();
   ota::loop();
@@ -619,7 +959,8 @@ void loop() {
   }
   if (busy && net::state() != net::State::Online) {
     busy = false;  // Antwort kommt nicht mehr
-    screen(replyTo).print("! Verbindung zur Bridge verloren");
+    if (replyTo == Mode::Files) filesSyncEnd("! Verbindung zur Bridge verloren");
+    else screen(replyTo).print("! Verbindung zur Bridge verloren");
   }
   sendPending();
   if (voiceActive && !mic::recording()) voiceFinish();  // Puffer voll
@@ -640,6 +981,7 @@ void loop() {
   }
   if (offRequested && !keypad::active()) sleepNow();
 
+  if (mode == Mode::Files && files.dirty) filesRender();
   updateStatus();
   display::render(screen());
 

@@ -9,3 +9,4 @@ firmware/casio_deck/secrets.h
 firmware/hosttest/test_host
 firmware/sim/.deps/
 firmware/sim/casio-sim
+firmware/sim/sim-files/

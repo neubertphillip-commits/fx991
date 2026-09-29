@@ -56,11 +56,19 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
   Elektronik hin, kein Metall/Kupfer zwischen den Spulen). Sender + Powerbank in der mitgelieferten
   Safe-Case-Mappe (Rechner liegt mit der Rueckseite darin). USB-C des XIAO ist nach dem Einbau
   nicht erreichbar -> Firmware-Updates per WLAN (OTA) mit automatischem Rollback.
-- Display (Idee, Masse noch messen): Panel quer (aktiv 48,96 x 36,72 mm) hinter Display- UND
-  Solarfenster. Dazu innen oben alles wegschneiden/schleifen (Knopfzellenhalter, Stege um das
-  Solarfenster), die Front mit dem Steg zwischen den Fenstern bleibt. Displayfenster gemessen 62 x 25 mm
-  (sichtbar ~640 x 327 px = 80 x 20 Zeichen bei 8x16). Grob aus einem Foto: Steg ~4 mm, Solarfenster ~33 x 14 mm -> unten Hauptbild (~640 x 340 px), oben durchs
-  Solarfenster ein Streifen (~430 x 90 px) als zweiter kleiner Bildschirm (Status, Uhr, WLAN, Akku).
+- Display (Idee, gemessen): Panel quer (aktiv 48,96 x 36,72 mm = 640 x 480 px, ~0,0765 mm/px) hinter
+  Display- UND Solarfenster. Dazu innen oben alles wegschneiden/schleifen (Knopfzellenhalter, Stege um
+  das Solarfenster), die Front mit dem Steg zwischen den Fenstern bleibt. Gemessen: Displayfenster
+  62 x 25 mm, Steg 4 mm, Solarfenster 35 x 15 mm; linker Rand Displayfenster ~8 mm, Solarfenster ~32 mm
+  vom Gehaeuserand (Annahme: Solarfenster also 24-59 mm, rechtsbuendig, links das CASIO-Logo).
+  Oberkante Solarfenster bis Unterkante Displayfenster 44 mm, Panel aussen 42,6 mm hoch: passt.
+  Plan (Variante A): aktive Flaeche unten buendig mit dem Displayfenster und rechts buendig mit dem
+  Solarfenster (Panel ~3,5 mm aus der Mitte nach rechts, Aussenkontur ragt rechts ueber das Fenster,
+  Rand/FPC-Seite im Datenblatt pruefen). Unten Hauptbild 640 x 327 px (80 x 20 Zeichen bei 8x16,
+  Fenster links ~10 mm, rechts ~3 mm schwarz), Steg verdeckt ~52 px, oben im Solarfenster ein Streifen
+  ~457 x 100 px (px 183-639, Zeilen 0-99; 57 x 6 Zeichen bei 8x16) als zweiter Bildschirm (Status, Uhr,
+  WLAN, Akku). Variante B (Panel hoch bis Oberkante Solarfenster): Streifen 196 px, Hauptbild nur 232 px.
+  Nicht sichtbare Pixel bleiben schwarz; genaue Lage nach dem Einbau mit Testbild (Raster) einmessen.
 - Aus = Tiefschlaf (SHIFT+AC oder 10 min), Wecken per Taste ueber INTA (D0, RTC-faehig). Watchdog 30 s.
 - Datei-Viewer (Modus DATEIEN): Ordner auf dem Handy (`bridge.py --files`), Abgleich per
   CRC-32 ins LittleFS (1,5 MB). Bridge macht PDF -> Text, Bilder -> JPEG 480x640.

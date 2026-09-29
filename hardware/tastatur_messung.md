@@ -112,7 +112,7 @@ Vorderseite komplett.
 
 ## Leitungen (Stand)
 
-15 Leitungen, passt auf einen MCP23017 (16 Pins).
+16 Leitungen, passt genau auf einen MCP23017 (16 Pins).
 
 | Leitung | besteht aus | Tasten (Kontakte) |
 |---|---|---|
@@ -123,7 +123,7 @@ Vorderseite komplett.
 | X3 | I + J + EB 25 | 25-30 |
 | X4 | O + V + EB 19, 22, 46 | 19-24, 46 |
 | X5 | P + T + EB 13 | 13-18 |
-| Q | Q (+ EB 4?) | 1, 2, 3, 5, 7 (4?) |
+| Q | Q | 1, 2, 3, 5, 7 |
 | X6 | S + U | 6, 8, 9, 10, 11, 12 |
 | C | C | 1, 9, 13, 19, 25, 31, 36, 41 |
 | N | N + X1 + EB 47 | 2, 10, 14, 20, 26, 32, 37, 42, 47 |
@@ -131,12 +131,14 @@ Vorderseite komplett.
 | M | M + X2 | 7, 8, 16, 22, 28, 34, 39, 44 |
 | L | L + R + E | 3, 11, 17, 23, 29, 35, 40, 45 |
 | K | K | 4, 12, 18, 24, 30 |
+| ON | EB 4 | 4 (eigene Leitung, vermutlich die ON-Taste) |
 
 Keine reine Zeilen/Spalten-Matrix: 0 (A-X4), . (A-N), Ans (A-F) und EXE (A-B) verbinden Leitungen, die sonst
 beide Zeilen waeren (A-B-N bilden ein Dreieck). Die Firmware muss deshalb jede Leitung einzeln
 treiben und alle anderen lesen.
 
-Gemessen: 49-EB an 39/40 (= F), EXE an 41-45 (= B). Noch offen: 4-EB (Q?).
+Gemessen: 49-EB an 39/40 (= F), EXE an 41-45 (= B), 4-EB mit keiner Leitung verbunden (eigene Leitung ON).
+Gegenmessung (gegenmessung.md): keine weiteren Leitungen gehoeren zusammen. **Matrix komplett.**
 
 ## Vermutete Matrix (noch zu bestaetigen)
 

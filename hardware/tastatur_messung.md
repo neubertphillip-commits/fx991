@@ -104,6 +104,9 @@ Vorderseite komplett.
 | X4 | O + V + EB 19, 22 (Kontakte 19-24) | Zeile 19-24, bestaetigt |
 | X5 | P + T + EB 13 (Kontakte 13-18) | Zeile 13-18, bestaetigt |
 | X6 | S + U (Kontakte 6, 8, 9, 10, 11, 12) | Zeile oben, bestaetigt |
+| N | + X1 (EB 32, 37, 42) + EB 47 | Spalte 2-5-8-. (42-14, 47-26 gemessen) |
+| M | + X2 (EB 34, 39, 44) | Spalte DEL-×-+ (44-16 gemessen) |
+| H | + D (38, 43) + EB 48 | Spalte 9-6-3-×10ˣ (38-33, 48-33 gemessen) |
 
 ## Vermutete Matrix (noch zu bestaetigen)
 

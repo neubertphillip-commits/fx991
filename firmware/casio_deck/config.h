@@ -37,7 +37,7 @@ constexpr uint8_t MCP_ADDR = 0x20;
 constexpr uint32_t I2C_FREQ = 100000;
 
 // ---------------------------------------------------------------------------
-// Tastatur des fx-991DE CW (ausgemessen, siehe hardware/tastatur_messung.md):
+// Tastatur des fx-991DE X (ausgemessen, siehe hardware/tastatur_messung.md):
 // 16 Leitungen, jede an einem MCP-Pin (0..7 = GPA0..GPA7, 8..15 = GPB0..GPB7).
 //
 // Keine reine Zeilen/Spalten-Matrix: 0, ., x10^x, Ans und EXE verbinden Leitung A mit

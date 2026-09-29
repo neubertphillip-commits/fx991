@@ -1,4 +1,4 @@
-// Tastatur des fx-991DE CW ueber MCP23017 (I2C), Leitungen siehe config.h.
+// Tastatur des fx-991DE X ueber MCP23017 (I2C), Leitungen siehe config.h.
 //
 // Ruhezustand: alle Treiber-Leitungen LOW, Interrupt-on-change auf den Eingaengen. INTA
 // (oder ein gelegentliches Nachsehen, falls INTA nicht verdrahtet ist) weckt den Scanner;

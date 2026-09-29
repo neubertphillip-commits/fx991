@@ -239,7 +239,7 @@ starten/abschicken), `:sync` (Dateien abgleichen), `:ota` (WLAN 5 min an),
 
 ## Tastatur
 
-Ausgemessen am fx-991DE CW, Protokoll in `hardware/tastatur_messung.md`, Kontaktnummern in
+Ausgemessen am fx-991DE X, Protokoll in `hardware/tastatur_messung.md`, Kontaktnummern in
 `hardware/tastatur_nummern.jpg`. 50 Tasten an 16 Leitungen, je eine an einem MCP23017-Pin:
 
 | MCP-Pin | SO-28 Pin | Leitung | Tasten (Kontakte) | Rolle |

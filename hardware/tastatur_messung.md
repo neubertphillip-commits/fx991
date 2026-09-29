@@ -1,4 +1,4 @@
-# Tastaturmatrix fx-991DE CW: Messprotokoll
+# Tastaturmatrix fx-991DE X: Messprotokoll
 
 Kontaktnummern siehe `tastatur_nummern.jpg` (Platine von der Kammseite, LCD-Anschluss oben).
 Gemessen im 2k-Bereich auf den hellgrauen Kohlekontakten (die schwarzen Bahnen sind lackiert).

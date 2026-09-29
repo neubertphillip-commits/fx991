@@ -1,6 +1,6 @@
 # Casio-Deck
 
-Umbau eines Casio fx-991DE CW (ClassWiz) zum Cyberdeck: Ein XIAO ESP32S3 ersetzt den Casio-Chip,
+Umbau eines Casio fx-991DE X (ClassWiz EX) zum Cyberdeck: Ein XIAO ESP32S3 ersetzt den Casio-Chip,
 ein IPS-Panel ersetzt das LCD, Gehaeuse und Tastatur bleiben. Ueber den Handy-Hotspot
 spricht der Rechner mit einer Bridge in Termux, die Claude Code (`claude -p`) aufruft.
 
@@ -10,7 +10,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 ## Hardware (bestellt 25.09.2026)
 
 - Seeed XIAO ESP32S3 Sense (OV3660-Kamera, abnehmbare Sense-Platine, LiPo-Lader onboard, 11 GPIO an der Kante)
-- BuyDisplay 2,4" Bar-Type IPS 480x640, SPI+RGB, 40-Pin-ZIF, mit LT7680-Controllerboard (SPI -> RGB, RA8876-aehnlicher Befehlssatz; LovyanGFX unterstuetzt ihn vermutlich nicht direkt, BuyDisplay-Beispielcode als Basis)
+- BuyDisplay 2,4" Bar-Type IPS 480x640 (ER-TFT024-5: aussen 42,62 x 58,50 x 2,2 mm, aktiv 36,72 x 48,96 mm, hochkant), SPI+RGB, 40-Pin-ZIF, mit LT7680-Controllerboard (SPI -> RGB, RA8876-aehnlicher Befehlssatz; LovyanGFX unterstuetzt ihn vermutlich nicht direkt, BuyDisplay-Beispielcode als Basis)
 - LiPo 3,7 V 300 mAh, 40x30x3 mm, an BAT-Pads des XIAO
 - Kupferlackdraht 0,1 mm zum Anzapfen der Tastaturpads
 
@@ -79,8 +79,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 ## Offen
 
 1. ~~Tastaturmatrix ausmessen~~ erledigt: `hardware/tastatur_messung.md`, Karte `hardware/tastatur_nummern.jpg`,
-   Keymap in `keymap.cpp` mit Beschriftung. Das Tastenlayout (50 Tasten, ON mit eigener Leitung,
-   Pfeile ohne OK-Taste) entspricht dem fx-991DE X (ClassWiz EX), nicht dem CW: Modell bestaetigen.
+   Keymap in `keymap.cpp` mit Beschriftung (fx-991DE X, bestaetigt).
 2. ~~Firmware-Grundgeruest~~ steht inkl. ALPHA-Mehrfachtippen (kompiliert, im Simulator getestet, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt.
 3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`, inkl. `showJpeg`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.

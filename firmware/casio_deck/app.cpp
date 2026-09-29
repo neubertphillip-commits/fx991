@@ -737,6 +737,9 @@ const char* keyText(Key k, bool shifted) {
     case K_TAN: return shifted ? "atan(" : "tan(";
     case K_LN: return shifted ? "exp(" : "ln(";
     case K_LOG: return "log(";
+    case K_NEG: return "-";
+    case K_SQR: return "^2";
+    case K_INV: return "^(-1)";
     default: return nullptr;
   }
 }

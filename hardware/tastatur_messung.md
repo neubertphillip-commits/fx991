@@ -39,38 +39,38 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 
 ## Tasten (50 von 50 vollstaendig)
 
-| Kontakt | Taste (vermutlich) | Haelfte 1 | Haelfte 2 |
+| Kontakt | Taste (Layout fx-991DE X) | Haelfte 1 | Haelfte 2 |
 |---|---|---|---|
-| 1 |  | C | Q |
-| 2 |  | Q | N |
-| 3 |  | Q | R |
-| 4 |  | K | EB |
+| 1 | SHIFT | C | Q |
+| 2 | ALPHA | Q | N |
+| 3 | MENU/SETUP | Q | R |
+| 4 | ON | K | EB |
 | 5 | hoch | H | Q |
 | 6 | links | H | S |
 | 7 | rechts | M | Q |
 | 8 | runter | M | U |
-| 9 |  | C | S |
-| 10 |  | N | S |
-| 11 |  | R | U |
-| 12 |  | K | U |
-| 13 |  | C | EB |
-| 14 |  | N | P |
-| 15 |  | H | P |
-| 16 |  | M | T |
-| 17 |  | L | T |
-| 18 |  | K | T |
-| 19 |  | C | EB |
-| 20 |  | N | O |
-| 21 |  | H | O |
-| 22 |  | M | EB |
-| 23 |  | L | V |
-| 24 |  | K | V |
-| 25 |  | C | EB |
-| 26 |  | I | N |
-| 27 |  | H | I |
-| 28 |  | J | M |
-| 29 |  | J | L |
-| 30 |  | J | K |
+| 9 | OPTN | C | S |
+| 10 | CALC | N | S |
+| 11 | ∫ | R | U |
+| 12 | x | K | U |
+| 13 | Bruch | C | EB |
+| 14 | √ | N | P |
+| 15 | x² | H | P |
+| 16 | x^n | M | T |
+| 17 | log | L | T |
+| 18 | ln | K | T |
+| 19 | (−) | C | EB |
+| 20 | °'" | N | O |
+| 21 | x⁻¹ | H | O |
+| 22 | sin | M | EB |
+| 23 | cos | L | V |
+| 24 | tan | K | V |
+| 25 | STO | C | EB |
+| 26 | ENG | I | N |
+| 27 | ( | H | I |
+| 28 | ) | J | M |
+| 29 | S⇔D | J | L |
+| 30 | M+ | J | K |
 | 31 | 7 | C | G |
 | 32 | 8 | G | EB |
 | 33 | 9 | G | H |
@@ -87,10 +87,10 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 | 44 | + | B | EB |
 | 45 | − | B | E |
 | 46 | 0 | A | EB |
-| 47 | . | A | EB |
+| 47 | , | A | EB |
 | 48 | ×10ˣ | A | EB |
 | 49 | Ans | A | EB |
-| 50 | EXE | A | B |
+| 50 | = | A | B |
 
 Vorderseite komplett.
 

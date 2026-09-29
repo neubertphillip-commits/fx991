@@ -79,8 +79,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 ## Offen
 
 1. ~~Tastaturmatrix ausmessen~~ erledigt: `hardware/tastatur_messung.md`, Karte `hardware/tastatur_nummern.jpg`,
-   in `keymap.cpp` eingetragen. Offen: Beschriftung der Tasten 1-4 und 9-30 notieren und den
-   logischen Tasten zuordnen (SHIFT, MODE, ALPHA-Ersatz, sin, cos, ...).
+   Keymap in `keymap.cpp` mit Beschriftung. Das Tastenlayout (50 Tasten, ON mit eigener Leitung,
+   Pfeile ohne OK-Taste) entspricht dem fx-991DE X (ClassWiz EX), nicht dem CW: Modell bestaetigen.
 2. ~~Firmware-Grundgeruest~~ steht inkl. ALPHA-Mehrfachtippen (kompiliert, im Simulator getestet, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt.
 3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`, inkl. `showJpeg`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.

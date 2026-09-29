@@ -16,6 +16,9 @@ enum Key : uint8_t {
   K_SHIFT, K_ALPHA, K_MODE,
   K_UP, K_DOWN, K_LEFT, K_RIGHT,
   K_ON,
+  K_NEG,   // (-) Vorzeichen
+  K_SQR,   // x^2
+  K_INV,   // x^-1
   K_COUNT
 };
 

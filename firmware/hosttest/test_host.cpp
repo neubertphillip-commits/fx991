@@ -44,6 +44,9 @@ static void checkCalcError(const char* expr) {
 }
 
 static void testCalc() {
+  checkCalc("3^2", 9);
+  checkCalc("2^(-1)", 0.5);
+  checkCalc("-3+5", 2);
   checkCalc("1+2*3", 7);
   checkCalc("(1+2)*3", 9);
   checkCalc("-2^2", -4);

@@ -100,7 +100,11 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 6. Einbau ohne Loecher: OTA, Watchdog, Tiefschlaf sind geschrieben (kompiliert, Simulator getestet).
    Offen: Gehaeuse-Innenmasse (Hoehe XIAO+Sense ~15 mm!), Platz fuer Qi-Spule + Akku an der
    Rueckwand, Abstand Spule-Mappe (< ~5 mm), Ruhestrom im Tiefschlaf und des Qi-Senders messen.
-7. Spaeter, wenn Hardware und Firmware laufen: eine eigene Android-App (.apk) statt Termux,
+7. Eigene Tastaturplatine statt Anzapfen (Ringe der Casio-Platine nehmen kein Zinn): gleicher Umriss,
+   ENIG-Kontakte fuer die Matte, MCP23017 bestueckt, echte Matrix. `hardware/pcb/`: Geometrie aus Fotos
+   (tastatur_geometrie.json, ca. 0,5-1 mm genau), Druckvorlage fuer den Papiertest (vorlage.py/.pdf).
+   Offen: Papiertest mit Platine und Matte, Platinendicke, Lochdurchmesser, dann KiCad-Entwurf.
+8. Spaeter, wenn Hardware und Firmware laufen: eine eigene Android-App (.apk) statt Termux,
    fuer alles, nicht eine APK pro Aufgabe. Bis dahin Termux-Bridge.
    - Aufbau: Kern (Hintergrunddienst, Anmeldung, ein gesicherter Kanal) + Module, per
      App-Update erweiterbar, einzeln ein-/ausschaltbar mit eigener Erlaubnis. Laptop-Seite:

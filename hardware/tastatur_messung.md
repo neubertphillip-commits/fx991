@@ -100,6 +100,7 @@ Vorderseite komplett.
 |---|---|---|
 | X1 | EB 32, 37, 42 | Spalte 2-5-8; 47 (.) nicht genannt |
 | X2 | EB 34, 39, 44 | Spalte +, ×, DEL. Verbindung zu D war ein Umweg ueber den Casio-Chip (hoher Wert) |
+| X3 | I + J + EB 25 (Kontakte 25-30) | Zeile 25-30, bestaetigt |
 
 ## Vermutete Matrix (noch zu bestaetigen)
 
@@ -108,7 +109,7 @@ Viele Vorderseiten-Leitungen sind vermutlich ueber die Rueckseite verbunden. Aus
 - Spalten: C (1/4/7-Spalte), N (+ 2; X1 = EB 32, 37, 42; 47?), H (+ D, EB 48?), M? (X2 = EB 34, 39, 44; 49?),
   L, K, dazu E und R (evtl. mit L oder K verbunden). EB 46 vermutlich an C.
 - Zeilen: A (0-Reihe), B (1-Reihe), F (4-Reihe), G (7-Reihe), P+T+EB13, O+V+EB19+EB22,
-  I+J+EB25, Q, S, U.
+  I+J+EB25 (= X3, bestaetigt), Q, S, U.
 - Kontakt 4: K + EB (zuerst als EB/EB notiert, dann an K gefunden).
 - EXE (50) liegt zwischen A und B.
 

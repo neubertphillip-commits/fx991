@@ -2,6 +2,8 @@
 
 Kontaktnummern siehe `tastatur_nummern.jpg` (Platine von der Kammseite, LCD-Anschluss oben).
 Gemessen im 2k-Bereich auf den hellgrauen Kohlekontakten (die schwarzen Bahnen sind lackiert).
+Echte Verbindung: kleiner Wert (~0.05-0.60 im 2k-Bereich). Hohe Werte (> ~1.00) sind Umwege ueber den
+noch angeschlossenen Casio-Chip und zaehlen nicht.
 
 Jede Taste hat zwei Haelften, also zwei Eintraege. Buchstaben = Leitungen auf der Vorderseite,
 **EB** = Einzelblock: Haelfte mit keiner anderen verbunden, geht ueber ihre Durchfuehrung auf die
@@ -97,13 +99,13 @@ Vorderseite komplett.
 | Gruppe | verbunden | Anmerkung |
 |---|---|---|
 | X1 | EB 32, 37, 42 | Spalte 2-5-8; 47 (.) nicht genannt |
-| X2 | EB 34, 39, 44 + D (38, 43)? | **Widerspruch**: dann haetten 38 (6) und 39 (×) dieselben zwei Leitungen (F, D). Nachmessen, Messwerte notieren |
+| X2 | EB 34, 39, 44 | Spalte +, ×, DEL. Verbindung zu D war ein Umweg ueber den Casio-Chip (hoher Wert) |
 
 ## Vermutete Matrix (noch zu bestaetigen)
 
 Viele Vorderseiten-Leitungen sind vermutlich ueber die Rueckseite verbunden. Aus dem Muster:
 
-- Spalten: C (1/4/7-Spalte), N (+ 2; X1 = EB 32, 37, 42; 47?), H (+ D, EB 48?), M (+ EB 34, 39, 44, 49?),
+- Spalten: C (1/4/7-Spalte), N (+ 2; X1 = EB 32, 37, 42; 47?), H (+ D, EB 48?), M? (X2 = EB 34, 39, 44; 49?),
   L, K, dazu E und R (evtl. mit L oder K verbunden). EB 46 vermutlich an C.
 - Zeilen: A (0-Reihe), B (1-Reihe), F (4-Reihe), G (7-Reihe), P+T+EB13, O+V+EB19+EB22,
   I+J+EB25, Q, S, U.

@@ -60,7 +60,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - Tastatur: Casio-Platine (PWB-CY230-CL, vernickelt) bleibt als Tastatur, Silikonmatte mit
   Kohlenoppen darueber. Anzapfen an den Durchkontaktierungen auf der Rueckseite (0,1-mm-Lackdraht,
   flach mit Kapton). Casio-Chip (COB, U101) per durchtrennten Leiterbahnen abkoppeln, sonst
-  stoert er ueber seine Schutzdioden. Batterie und Solarzelle ablöten (Pads P170-P173).
+  stoert er ueber seine Schutzdioden. Batterie und Solarzelle abloeten (Pads P170-P173).
 - Spracheingabe: PDM-Mikro der Sense-Platine -> WAV als Binaer-Frame -> Bridge wandelt per `--stt`
   (whisper.cpp) in Text. `claude -p` nimmt kein Audio. Optional: ohne `--stt` laeuft alles andere normal.
 

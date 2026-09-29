@@ -152,3 +152,30 @@ Viele Vorderseiten-Leitungen sind vermutlich ueber die Rueckseite verbunden. Aus
 - EXE (50) liegt zwischen A und B.
 
 Damit waeren es etwa 16-18 Leitungen: ein MCP23017 hat 16, der zweite (0x21) ist vorhanden.
+
+## Loetpunkte Rueckseite (zu messen)
+
+Karte: `rueckseite_punkte.jpg` (Rueckseite, Chip oben, 57 Durchkontaktierungen nummeriert).
+Die Lage wurde aus den Fotos berechnet (Rueckseite gespiegelt auf die Vorderseite gelegt). Zu welcher
+Leitung ein Punkt gehoert, sieht man auf den Fotos nicht sicher: Die Bahnen liegen unter dem Lack.
+Deshalb messen: Durchgangspruefer, eine Spitze auf die Kohlehaelfte eines Referenzkontakts
+(die Haelfte, die auch mit dem zweiten Kontakt piept), mit der anderen die Punkte absuchen.
+
+| Leitung | MCP | Referenz (gemeinsame Leitung von) | Punkt |
+|---|---|---|---|
+| C | GPA0 | 1 + 9 | |
+| N | GPA1 | 2 + 10 | |
+| H | GPA2 | 5 + 6 | |
+| M | GPA3 | 7 + 8 | |
+| L | GPA4 | 3 + 11 | |
+| K | GPA5 | 12 + 18 | |
+| A | GPA6 | 46 + 47 | |
+| ON | GPA7 | 4 (die Haelfte, die nicht mit 12 piept) | |
+| Q | GPB0 | 1 + 2 | |
+| X5 | GPB1 | 13 + 14 | |
+| X4 | GPB2 | 19 + 20 | |
+| X3 | GPB3 | 25 + 26 | |
+| G | GPB4 | 31 + 32 | |
+| F | GPB5 | 36 + 37 | |
+| B | GPB6 | 41 + 42 | |
+| X6 | GPB7 | 9 + 10 | |

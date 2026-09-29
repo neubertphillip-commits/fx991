@@ -97,6 +97,7 @@ Vorderseite komplett.
 | Gruppe | verbunden | Anmerkung |
 |---|---|---|
 | X1 | EB 32, 37, 42 | Spalte 2-5-8; 47 (.) nicht genannt |
+| X2 | EB 34, 39, 44 + D (38, 43)? | **Widerspruch**: dann haetten 38 (6) und 39 (×) dieselben zwei Leitungen (F, D). Nachmessen, Messwerte notieren |
 
 ## Vermutete Matrix (noch zu bestaetigen)
 

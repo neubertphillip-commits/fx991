@@ -48,7 +48,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
   Die Kamera darf hinten etwas herausschauen (Rueckkamera). Dann zaehlt fuer die Bauhoehe nur
   XIAO + Sense-Platine ohne Kamera; die Mappe braucht eine Aussparung fuer den Buckel, damit der
   Rechner flach auf der Qi-Spule liegt. Kamera oben, Qi-Spule weiter unten an der Rueckwand.
-  Kein Batteriefach vorhanden. Laden per Qi: Empfaengerspule innen an der Rueckwand (Ferrit zur
+  Batteriefach nur fuer eine Knopfzelle (verschraubter Deckel oben rechts, zu klein fuer den
+  LiPo; evtl. Platz fuer eine USB-C-Buchse als Notzugang ohne neues Loch). Laden per Qi: Empfaengerspule innen an der Rueckwand (Ferrit zur
   Elektronik hin, kein Metall/Kupfer zwischen den Spulen). Sender + Powerbank in der mitgelieferten
   Safe-Case-Mappe (Rechner liegt mit der Rueckseite darin). USB-C des XIAO ist nach dem Einbau
   nicht erreichbar -> Firmware-Updates per WLAN (OTA) mit automatischem Rollback.
@@ -56,6 +57,10 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 - Datei-Viewer (Modus DATEIEN): Ordner auf dem Handy (`bridge.py --files`), Abgleich per
   CRC-32 ins LittleFS (1,5 MB). Bridge macht PDF -> Text, Bilder -> JPEG 480x640.
   Rechner bricht Text selbst um (nur Zeilenanfaenge im RAM). Bilder erst mit LT7680-Treiber.
+- Tastatur: Casio-Platine (PWB-CY230-CL, vernickelt) bleibt als Tastatur, Silikonmatte mit
+  Kohlenoppen darueber. Anzapfen an den Durchkontaktierungen auf der Rueckseite (0,1-mm-Lackdraht,
+  flach mit Kapton). Casio-Chip (COB, U101) per durchtrennten Leiterbahnen abkoppeln, sonst
+  stoert er ueber seine Schutzdioden. Batterie und Solarzelle ablöten (Pads P170-P173).
 - Spracheingabe: PDM-Mikro der Sense-Platine -> WAV als Binaer-Frame -> Bridge wandelt per `--stt`
   (whisper.cpp) in Text. `claude -p` nimmt kein Audio. Optional: ohne `--stt` laeuft alles andere normal.
 

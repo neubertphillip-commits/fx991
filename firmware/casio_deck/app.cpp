@@ -805,22 +805,16 @@ void onKey(Key k) {
   }
 }
 
-const char* mcpPinName(uint8_t pin) {
-  static char buf[8];
-  snprintf(buf, sizeof(buf), "GP%c%u", pin < 8 ? 'A' : 'B', pin % 8);
-  return buf;
-}
-
 void pollKeys() {
   KeyEvent ev;
   while (keypad::poll(ev)) {
-    Key k = keymapLookup(ev.row, ev.col);
+    Key k = keymapLookup(ev.a, ev.b);
     if (k == K_NONE || logKeys) {
-      // Hilfe beim Ausmessen der Matrix: Position und MCP-Pins melden.
-      Serial.printf("[key] %s Zeile %u (%s) ", ev.pressed ? "gedrueckt " : "losgelassen",
-                    ev.row, mcpPinName(KEY_ROW_PINS[ev.row]));
-      Serial.printf("Spalte %u (%s) -> %s\n", ev.col, mcpPinName(KEY_COL_PINS[ev.col]),
-                    k == K_NONE ? "unbelegt" : keyName(k));
+      // Hilfe beim Zuordnen: Kontaktnummer (hardware/tastatur_nummern.jpg), Leitungen, MCP-Pins
+      Serial.printf("[key] %s Kontakt %u, Leitungen %s-%s (GP%c%u/GP%c%u) -> %s\n",
+                    ev.pressed ? "gedrueckt  " : "losgelassen", keymapContact(ev.a, ev.b),
+                    keyLineName(ev.a), keyLineName(ev.b), ev.a < 8 ? 'A' : 'B', ev.a % 8,
+                    ev.b < 8 ? 'A' : 'B', ev.b % 8, k == K_NONE ? "unbelegt" : keyName(k));
     }
     if (ignoreKeys) continue;
     lastActivity = millis();

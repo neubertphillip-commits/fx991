@@ -1,6 +1,7 @@
-// Logische Tasten und Zuordnung Matrixposition -> Taste.
+// Logische Tasten und Zuordnung Tastenkontakt -> Taste.
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 enum Key : uint8_t {
@@ -14,11 +15,27 @@ enum Key : uint8_t {
   K_DEL, K_AC,
   K_SHIFT, K_ALPHA, K_MODE,
   K_UP, K_DOWN, K_LEFT, K_RIGHT,
+  K_ON,
   K_COUNT
 };
 
-// Matrixposition (Zeile, Spalte) -> logische Taste; K_NONE, wenn unbelegt.
-Key keymapLookup(uint8_t row, uint8_t col);
+// Ein Tastenkontakt der Casio-Platine (Nummer wie in hardware/tastatur_nummern.jpg)
+// verbindet zwei Leitungen (KeyLine aus config.h).
+struct KeyContact {
+  uint8_t contact;
+  uint8_t a;
+  uint8_t b;
+  Key key;
+};
+extern const KeyContact KEY_CONTACTS[];
+extern const size_t KEY_CONTACT_COUNT;
+
+// Leitungen a/b (Reihenfolge egal) -> logische Taste; K_NONE, wenn unbelegt.
+Key keymapLookup(uint8_t a, uint8_t b);
+// Leitungen -> Kontaktnummer (1..50), 0 wenn keine Taste diese Leitungen verbindet.
+uint8_t keymapContact(uint8_t a, uint8_t b);
+// Name einer Leitung ("A", "X4", ...) fuer Debug-Ausgaben.
+const char* keyLineName(uint8_t line);
 
 // Kurzname fuer Debug-Ausgaben ("7", "EXE", ...).
 const char* keyName(Key k);

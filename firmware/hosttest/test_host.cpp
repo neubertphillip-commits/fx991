@@ -8,7 +8,9 @@
 #include <vector>
 
 #include "../casio_deck/calc.h"
+#include "../casio_deck/config.h"
 #include "../casio_deck/crc32.h"
+#include "../casio_deck/keys.h"
 #include "../casio_deck/multitap.h"
 #include "../casio_deck/screen.h"
 #include "../casio_deck/viewer.h"
@@ -278,7 +280,43 @@ static void testJpegSize() {
   CHECK(!jpegSize(jpg, 8, w, h));  // abgeschnitten vor dem SOF
 }
 
+// Die gemessene Tastatur muss zur Scan-Logik in keypad.cpp passen.
+static void testKeymap() {
+  CHECK(KEY_CONTACT_COUNT == 50);
+  bool seenContact[51] = {};
+  bool seenKey[K_COUNT] = {};
+  const uint16_t onlyOutput = (1u << 7) | (1u << 15);
+  for (size_t i = 0; i < KEY_CONTACT_COUNT; i++) {
+    const KeyContact& c = KEY_CONTACTS[i];
+    CHECK(c.contact >= 1 && c.contact <= 50 && !seenContact[c.contact]);
+    if (c.contact <= 50) seenContact[c.contact] = true;
+    CHECK(c.a < KEY_LINES && c.b < KEY_LINES && c.a != c.b);
+    for (size_t j = i + 1; j < KEY_CONTACT_COUNT; j++) {
+      const KeyContact& d = KEY_CONTACTS[j];
+      CHECK(!((c.a == d.a && c.b == d.b) || (c.a == d.b && c.b == d.a)));  // eindeutig
+    }
+    bool aDrive = KEY_DRIVE_MASK & (1u << c.a), bDrive = KEY_DRIVE_MASK & (1u << c.b);
+    // Zwei Treiber an einer Taste: Kurzschluss HIGH gegen LOW im Scan
+    CHECK(!(aDrive && bDrive));
+    // Erkennbar: Treiber gegen Eingang, oder A (einzeln getrieben) gegen eine lesbare Leitung
+    bool withA = c.a == KL_A || c.b == KL_A;
+    uint8_t other = c.a == KL_A ? c.b : c.a;
+    bool detect = (aDrive != bDrive) || (withA && !(onlyOutput & (1u << other)));
+    if (!detect) printf("FEHLER Kontakt %u nicht erkennbar\n", c.contact);
+    CHECK(detect);
+    CHECK(keymapLookup(c.b, c.a) == c.key && keymapContact(c.a, c.b) == c.contact);
+    if (c.key != K_NONE) {
+      CHECK(!seenKey[c.key]);
+      seenKey[c.key] = true;
+    }
+  }
+  CHECK(keymapLookup(KL_A, KL_Q) == K_NONE && keymapContact(KL_A, KL_Q) == 0);
+  CHECK(keymapLookup(KL_A, KL_B) == K_EXE && keymapLookup(KL_N, KL_A) == K_DOT);
+  CHECK(!strcmp(keyLineName(KL_X6), "X6"));
+}
+
 int main() {
+  testKeymap();
   testCalc();
   testScreen();
   testMultiTap();

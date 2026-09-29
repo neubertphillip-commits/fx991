@@ -32,7 +32,10 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 
 ## Entscheidungen
 
-- MCP23017: GPA7/GPB7 nur als Ausgaenge (Datenblatt-Aenderung), also fuer Zeilen. Spalten als Eingaenge mit internen Pull-ups (GPPU).
+- MCP23017: GPA7/GPB7 nur als Ausgaenge (Datenblatt-Aenderung). Tastatur: 16 Leitungen, je eine
+  pro MCP-Pin (Belegung in firmware/README.md und config.h). Keine reine Zeilen/Spalten-Matrix
+  (0, ., x10^x, Ans, EXE haengen an Leitung A): Treiber einzeln LOW, Eingaenge mit Pull-up lesen,
+  dann A allein treiben. . und x10^x wecken nicht per Interrupt.
 - I2C zuerst ohne externe Pull-ups/100 nF: interne ESP32-Pull-ups, 100 kHz. Bei Problemen 4,7 kOhm nachruesten.
 - XIAO-Pins: I2C (D4 SDA, D5 SCL), INTA vom MCP23017, SPI zum LT7680 (SCK, MOSI, MISO, CS, ggf. RST/WAIT).
 - LT7680-Board laeuft mit 3,3 V (vom 3V3-Pin des XIAO), kein Step-up noetig.
@@ -74,10 +77,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 
 ## Offen
 
-1. Tastaturmatrix des fx-991DE CW ausmessen, Zeilen/Spalten dokumentieren. Die CW-Tasten heissen
-   teils anders als die logischen Tasten der Firmware (K_MODE, K_ALPHA, ...); Zuordnung beim Ausmessen.
-   Karte: `hardware/tastatur_nummern.jpg` (50 Kontakte nummeriert, 5-8 = Pfeiltasten, 31-50 Zahlenblock).
-   Messen im 2k-Bereich auf den hellgrauen Kohlekontakten; die schwarzen Bahnen sind lackiert.
+1. ~~Tastaturmatrix ausmessen~~ erledigt: `hardware/tastatur_messung.md`, Karte `hardware/tastatur_nummern.jpg`,
+   in `keymap.cpp` eingetragen. Offen: Beschriftung der Tasten 1-4 und 9-30 notieren und den
+   logischen Tasten zuordnen (SHIFT, MODE, ALPHA-Ersatz, sin, cos, ...).
 2. ~~Firmware-Grundgeruest~~ steht inkl. ALPHA-Mehrfachtippen (kompiliert, im Simulator getestet, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt.
 3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`, inkl. `showJpeg`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.

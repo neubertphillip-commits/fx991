@@ -121,7 +121,8 @@ freien Text (wird wie vom seriellen Monitor eingegeben). Strg-C beendet.
 | D6, D7 | 43, 44 | frei |
 | D8/D9/D10 | 7/8/9 | SPI SCK/MISO/MOSI (LT7680) |
 
-MCP23017: A0-A2 an GND (0x20), RESET an 3V3.
+MCP23017 (SO-28): VDD (9) an 3V3, VSS (10) an GND, SCL (12), SDA (13), A0-A2 (15-17) an GND
+(Adresse 0x20), RESET (18) an 3V3, INTA (20) an D0. Tastenleitungen siehe Abschnitt Tastatur.
 
 ## Modi
 
@@ -236,19 +237,47 @@ alles ohne Tastatur testen. Befehle: `:calc` `:term` `:cam` `:files` (Modus), `:
 starten/abschicken), `:sync` (Dateien abgleichen), `:ota` (WLAN 5 min an),
 `:off` (ausschalten), `:help`.
 
-## Tastaturmatrix ausmessen
+## Tastatur
 
-Die Zeilen/Spalten in `config.h` sind vorlaeufig (9 Zeilen an GPB0-7 + GPA7,
-7 Spalten an GPA0-6). Jede Taste, die in `keymap.cpp` noch nicht belegt ist, meldet
-sich beim Druecken mit
+Ausgemessen am fx-991DE CW, Protokoll in `hardware/tastatur_messung.md`, Kontaktnummern in
+`hardware/tastatur_nummern.jpg`. 50 Tasten an 16 Leitungen, je eine an einem MCP23017-Pin:
+
+| MCP-Pin | SO-28 Pin | Leitung | Tasten (Kontakte) | Rolle |
+|---|---|---|---|---|
+| GPA0 | 21 | C | 1, 9, 13, 19, 25, 31, 36, 41 | Eingang |
+| GPA1 | 22 | N | 2, 10, 14, 20, 26, 32, 37, 42, 47 | Eingang |
+| GPA2 | 23 | H | 5, 6, 15, 21, 27, 33, 38, 43, 48 | Eingang |
+| GPA3 | 24 | M | 7, 8, 16, 22, 28, 34, 39, 44 | Eingang |
+| GPA4 | 25 | L | 3, 11, 17, 23, 29, 35, 40, 45 | Eingang |
+| GPA5 | 26 | K | 4, 12, 18, 24, 30 | Eingang |
+| GPA6 | 27 | A | 46, 47, 48, 49, 50 | Eingang, wird auch getrieben |
+| GPA7 | 28 | ON | 4 | Treiber (nur Ausgang) |
+| GPB0 | 1 | Q | 1, 2, 3, 5, 7 | Treiber |
+| GPB1 | 2 | X5 | 13-18 | Treiber |
+| GPB2 | 3 | X4 | 19-24, 46 | Treiber |
+| GPB3 | 4 | X3 | 25-30 | Treiber |
+| GPB4 | 5 | G | 31-35 | Treiber |
+| GPB5 | 6 | F | 36-40, 49 | Treiber |
+| GPB6 | 7 | B | 41-45, 50 | Treiber |
+| GPB7 | 8 | X6 | 6, 8, 9, 10, 11, 12 | Treiber (nur Ausgang) |
+
+Jede Leitung braucht nur **einen** Draht, an eine beliebige Durchfuehrung der Leitung.
+
+Es ist keine reine Zeilen/Spalten-Matrix: 0, ., x10^x, Ans und EXE verbinden A mit anderen
+Leitungen. Der Scanner treibt deshalb jeden Treiber einzeln LOW und liest die Eingaenge,
+danach A allein (fuer . und x10^x). Zwischen zwei Treibern liegt keine Taste, es gibt also
+keinen Kurzschluss; `hosttest` prueft das fuer die ganze Tabelle. . und x10^x loesen im
+Ruhezustand keinen Interrupt aus: Sie wecken nicht aus dem Tiefschlaf und werden im
+Leichtschlaf erst beim naechsten Timer-Wecken (<= 1 s) erkannt.
+
+Die Tasten 1-4 und 9-30 sind in `keymap.cpp` noch nicht zugeordnet. Beim Druecken meldet
+der serielle Monitor
 
 ```
-[key] gedrueckt  Zeile 3 (GPB3) Spalte 5 (GPA5) -> unbelegt
+[key] gedrueckt   Kontakt 17, Leitungen L-X5 (GPA4/GPB1) -> unbelegt
 ```
 
-Damit Taste fuer Taste die Tabelle `KEYMAP` fuellen. Hat der fx-991 mehr Zeilen als
-Spalten (oder umgekehrt), die Pinlisten in `config.h` anpassen; GPA7/GPB7 muessen
-Zeilen bleiben.
+`:keys` schaltet diese Meldung fuer alle Tasten ein (auch belegte).
 
 ## Offen
 

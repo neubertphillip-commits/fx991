@@ -37,19 +37,30 @@ constexpr uint8_t MCP_ADDR = 0x20;
 constexpr uint32_t I2C_FREQ = 100000;
 
 // ---------------------------------------------------------------------------
-// Tastaturmatrix (VORLAEUFIG, bis die Matrix des fx-991 ausgemessen ist)
+// Tastatur des fx-991DE CW (ausgemessen, siehe hardware/tastatur_messung.md):
+// 16 Leitungen, jede an einem MCP-Pin (0..7 = GPA0..GPA7, 8..15 = GPB0..GPB7).
 //
-// MCP-Pinnummern: 0..7 = GPA0..GPA7, 8..15 = GPB0..GPB7.
-// GPA7/GPB7 duerfen laut Datenblatt nur Ausgaenge sein -> Zeilen.
-// Spalten sind Eingaenge mit internen Pull-ups (GPPU).
+// Keine reine Zeilen/Spalten-Matrix: 0, ., x10^x, Ans und EXE verbinden Leitung A mit
+// anderen Leitungen. Deshalb treibt der Scanner jede Treiber-Leitung einzeln LOW und
+// liest alle anderen.
+//
+//   Treiber, im Ruhezustand LOW:  Q X5 X4 X3 G F B X6 (GPB0..GPB7) und ON (GPA7)
+//   Eingaenge mit Pull-up + Interrupt: C N H M L K A (GPA0..GPA6)
+//
+// GPA7/GPB7 duerfen laut Datenblatt nur Ausgaenge sein, deshalb liegen dort ON und X6.
+// A ist Eingang und wird zusaetzlich einzeln getrieben (fuer . und x10^x, die zwischen
+// A und den Eingaengen N bzw. H liegen).
 // ---------------------------------------------------------------------------
-constexpr uint8_t KEY_ROW_PINS[] = {8, 9, 10, 11, 12, 13, 14, 15, 7};  // GPB0..GPB7, GPA7
-constexpr uint8_t KEY_COL_PINS[] = {0, 1, 2, 3, 4, 5, 6};              // GPA0..GPA6
-constexpr uint8_t KEY_ROWS = sizeof(KEY_ROW_PINS);
-constexpr uint8_t KEY_COLS = sizeof(KEY_COL_PINS);
+enum KeyLine : uint8_t {
+  KL_C = 0, KL_N, KL_H, KL_M, KL_L, KL_K, KL_A, KL_ON,  // GPA0..GPA7
+  KL_Q = 8, KL_X5, KL_X4, KL_X3, KL_G, KL_F, KL_B, KL_X6,  // GPB0..GPB7
+  KEY_LINES = 16
+};
+constexpr uint16_t KEY_DRIVE_MASK = 0xFF80;  // Treiber (Ausgaenge), im Ruhezustand LOW
+constexpr uint16_t KEY_SENSE_MASK = 0x007F;  // Eingaenge mit Pull-up und Interrupt
 
 constexpr uint32_t KEY_SCAN_MS = 5;       // Scanintervall, solange eine Taste gedrueckt ist
-constexpr uint8_t KEY_DEBOUNCE_SCANS = 4;  // so viele gleiche Scans = stabil (~20 ms)
+constexpr uint8_t KEY_DEBOUNCE_SCANS = 3;  // so viele gleiche Scans = stabil (~25 ms)
 
 // ---------------------------------------------------------------------------
 // Display: 480x640 IPS, Textkonsole mit 8x16-Font -> 60x40 Zeichen.

@@ -1,5 +1,5 @@
 SRC = test_host.cpp ../casio_deck/calc.cpp ../casio_deck/screen.cpp ../casio_deck/multitap.cpp ../casio_deck/wav.cpp \
-      ../casio_deck/viewer.cpp ../casio_deck/crc32.cpp
+      ../casio_deck/viewer.cpp ../casio_deck/crc32.cpp ../casio_deck/keymap.cpp
 CXXFLAGS = -std=gnu++17 -Wall -Wextra -g -fsanitize=address,undefined
 
 test: test_host

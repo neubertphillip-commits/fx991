@@ -28,23 +28,25 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | O | 20, 21 |
 | P | 14, 15 |
 | Q | 1, 2, 3, 5, 7 |
+| R | 3, 11 |
+| S | 6, 9, 10 |
 | EB | 2, 4, 4, 13, 19, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
 
-## Tasten (37 von 50 vollstaendig)
+## Tasten (41 von 50 vollstaendig)
 
 | Kontakt | Taste (vermutlich) | Haelfte 1 | Haelfte 2 |
 |---|---|---|---|
 | 1 |  | C | Q |
 | 2 |  | Q | EB |
-| 3 |  | Q | ? |
+| 3 |  | Q | R |
 | 4 |  | EB | EB |
 | 5 | hoch | H | Q |
-| 6 | links | H | ? |
+| 6 | links | H | S |
 | 7 | rechts | M | Q |
 | 8 | runter | M | ? |
-| 9 |  | C | ? |
-| 10 |  | N | ? |
-| 11 |  | ? | ? |
+| 9 |  | C | S |
+| 10 |  | N | S |
+| 11 |  | R | ? |
 | 12 |  | K | ? |
 | 13 |  | C | EB |
 | 14 |  | N | P |
@@ -85,4 +87,4 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | 49 | Ans | A | EB |
 | 50 | EXE | A | B |
 
-Noch offen (eine oder beide Haelften fehlen): 3, 6, 8, 9, 10, 11, 12, 16, 17, 18, 22, 23, 24
+Noch offen (eine Haelfte fehlt): 8, 11, 12, 16, 17, 18, 22, 23, 24

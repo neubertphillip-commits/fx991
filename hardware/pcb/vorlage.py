@@ -2,8 +2,9 @@
 
 Liest tastatur_geometrie.json und schreibt vorlage.pdf (A4). Drucken mit
 "Tatsaechliche Groesse" / 100 %, dann den Massstabsbalken nachmessen (50 mm).
-Die alte Platine auf den Umriss legen: Loecher und Tastenkreise muessen passen.
-Dann die Silikonmatte auflegen: jede Kohlenoppe muss mittig in ihrem Kreis sitzen.
+Die Loecher sind absichtlich groesser (Spiel fuer die Gehaeusezapfen, die Platine wird
+beim Einbau an den Tasten ausgerichtet und festgeklebt). Test: Silikonmatte auflegen und
+so schieben, dass die Kohlenoppen mittig in ihren Kreisen sitzen.
 
     python vorlage.py   (braucht matplotlib)
 """
@@ -40,7 +41,10 @@ def main():
     ax.add_patch(Polygon([P(x, y) for x, y in geo["umriss"]], closed=True,
                          fill=False, lw=0.4, ec="black"))
     for h in geo["loecher"]:
-        ax.add_patch(Circle(P(h["x"], h["y"]), h["d"] / 2, fill=False, lw=0.4, ec="black"))
+        # vergroessertes Loch (Entwurf) durchgezogen, gemessenes gepunktet
+        ax.add_patch(Circle(P(h["x"], h["y"]), h.get("d_entwurf", h["d"]) / 2, fill=False,
+                            lw=0.4, ec="black"))
+        ax.add_patch(Circle(P(h["x"], h["y"]), h["d"] / 2, fill=False, lw=0.3, ec="gray", ls=":"))
         cx, cy = P(h["x"], h["y"])
         ax.plot([cx - 1, cx + 1], [cy, cy], lw=0.2, c="black")
         ax.plot([cx, cx], [cy - 1, cy + 1], lw=0.2, c="black")
@@ -68,10 +72,10 @@ def main():
             ha="center", fontsize=11, weight="bold")
     ax.text(A4_W / 2, 22, "Tastenseite von vorn. Blau: gemessen, rot gestrichelt: geschaetzt "
             "(im Foto im Schatten). Genauigkeit ca. 0,5-1 mm.", ha="center", fontsize=7)
-    ax.text(A4_W / 2, 27, "1. Alte Platine auf den Umriss legen: sitzen Loecher und Tasten?  "
-            "2. Matte auflegen: Noppen mittig im Kreis?", ha="center", fontsize=7)
-    ax.text(A4_W / 2, 32, "Abweichungen je Taste in mm notieren (z. B. '46: 1 mm nach rechts').",
-            ha="center", fontsize=7)
+    ax.text(A4_W / 2, 27, "Loecher bewusst vergroessert (Spiel fuer die Zapfen, Platine wird festgeklebt). "
+            "Wichtig ist nur: Tasten zueinander.", ha="center", fontsize=7)
+    ax.text(A4_W / 2, 32, "Test: Matte auflegen, so schieben, dass die Noppen mittig sitzen. "
+            "Abweichungen notieren (z. B. '46: 1 mm rechts').", ha="center", fontsize=7)
 
     fig.savefig(HERE / "vorlage.pdf")
     fig.savefig(HERE / "vorlage.png", dpi=150)

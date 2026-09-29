@@ -384,37 +384,43 @@
    "name": "oben links",
    "x": 8.27,
    "y": 12.62,
-   "d": 3.2
+   "d": 3.2,
+   "d_entwurf": 5.5
   },
   {
    "name": "Mitte links",
    "x": 12.02,
    "y": 51.28,
-   "d": 3.2
+   "d": 3.2,
+   "d_entwurf": 5.0
   },
   {
    "name": "unten links",
    "x": 12.27,
    "y": 85.78,
-   "d": 3.2
+   "d": 3.2,
+   "d_entwurf": 6.0
   },
   {
    "name": "unten rechts",
    "x": 53.53,
    "y": 85.68,
-   "d": 3.2
+   "d": 3.2,
+   "d_entwurf": 6.0
   },
   {
    "name": "Mitte rechts",
    "x": 53.42,
    "y": 51.53,
-   "d": 3.2
+   "d": 3.2,
+   "d_entwurf": 4.8
   },
   {
    "name": "oben rechts",
    "x": 56.28,
    "y": 12.02,
-   "d": 3.2
+   "d": 3.2,
+   "d_entwurf": 6.0
   }
  ],
  "tasten": [
@@ -768,5 +774,6 @@
    "d": 7.7,
    "unsicher": true
   }
- ]
+ ],
+ "entwurf": "Loecher vergroessert (d_entwurf, mind. 0,5 mm Abstand zu den Tastenkontakten), damit die Platine trotz Messfehlern ueber die Gehaeusezapfen passt; Lage wird beim Einbau an den Tasten ausgerichtet und festgeklebt. Wichtig ist nur die Lage der Tasten zueinander."
 }

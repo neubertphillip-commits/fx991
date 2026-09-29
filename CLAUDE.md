@@ -76,6 +76,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 
 1. Tastaturmatrix des fx-991DE CW ausmessen, Zeilen/Spalten dokumentieren. Die CW-Tasten heissen
    teils anders als die logischen Tasten der Firmware (K_MODE, K_ALPHA, ...); Zuordnung beim Ausmessen.
+   Karte: `hardware/tastatur_nummern.jpg` (50 Kontakte nummeriert, 5-8 = Pfeiltasten, 31-50 Zahlenblock).
+   Messen im 2k-Bereich auf den hellgrauen Kohlekontakten; die schwarzen Bahnen sind lackiert.
 2. ~~Firmware-Grundgeruest~~ steht inkl. ALPHA-Mehrfachtippen (kompiliert, im Simulator getestet, auf Hardware ungetestet). Keymap fuellen, sobald 1. erledigt.
 3. LT7680-Treiber, sobald das Panel da ist (zweites Backend fuer `display.h`, inkl. `showJpeg`).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.

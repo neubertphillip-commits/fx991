@@ -118,7 +118,7 @@ Vorderseite komplett.
 |---|---|---|
 | A | A | 46-50 |
 | B | B | 41-45, 50 |
-| F | F | 36-40 |
+| F | F + EB 49 | 36-40, 49 |
 | G | G | 31-35 |
 | X3 | I + J + EB 25 | 25-30 |
 | X4 | O + V + EB 19, 22, 46 | 19-24, 46 |
@@ -128,15 +128,15 @@ Vorderseite komplett.
 | C | C | 1, 9, 13, 19, 25, 31, 36, 41 |
 | N | N + X1 + EB 47 | 2, 10, 14, 20, 26, 32, 37, 42, 47 |
 | H | H + D + EB 48 | 5, 6, 15, 21, 27, 33, 38, 43, 48 |
-| M | M + X2 (+ EB 49?) | 7, 8, 16, 22, 28, 34, 39, 44 (49?) |
+| M | M + X2 | 7, 8, 16, 22, 28, 34, 39, 44 |
 | L | L + R + E | 3, 11, 17, 23, 29, 35, 40, 45 |
 | K | K | 4, 12, 18, 24, 30 |
 
-Keine reine Zeilen/Spalten-Matrix: 0 (A-X4), . (A-N) und EXE (A-B) verbinden Leitungen, die sonst
+Keine reine Zeilen/Spalten-Matrix: 0 (A-X4), . (A-N), Ans (A-F) und EXE (A-B) verbinden Leitungen, die sonst
 beide Zeilen waeren (A-B-N bilden ein Dreieck). Die Firmware muss deshalb jede Leitung einzeln
 treiben und alle anderen lesen.
 
-Noch offen: 4-EB (Q?), 49-EB (M?), EXE zweite Haelfte (B bestaetigen).
+Gemessen: 49-EB an 39/40 (= F), EXE an 41-45 (= B). Noch offen: 4-EB (Q?).
 
 ## Vermutete Matrix (noch zu bestaetigen)
 

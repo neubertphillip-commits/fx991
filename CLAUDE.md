@@ -74,7 +74,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
   CRC-32 ins LittleFS (1,5 MB). Bridge macht PDF -> Text, Bilder -> JPEG 480x640.
   Rechner bricht Text selbst um (nur Zeilenanfaenge im RAM). Bilder erst mit LT7680-Treiber.
 - Tastatur: Casio-Platine (PWB-CY230-CL, vernickelt) bleibt als Tastatur, Silikonmatte mit
-  Kohlenoppen darueber. Anzapfen an den Durchkontaktierungen auf der Rueckseite (0,1-mm-Lackdraht,
+  Kohlenoppen darueber. Anzapfen am silbernen Ring der Durchkontaktierungen auf der Rueckseite (Karte hardware/rueckseite_punkte.jpg) (0,1-mm-Lackdraht,
   flach mit Kapton). Casio-Chip (COB, U101) abgekoppelt: Klecks liess sich nicht abhebeln, stattdessen
   alle Bahnen entlang des weissen Rings um den Klecks durchgeritzt; Chip-Umwege weg, Leitungen intakt
   (nachgemessen). Batterie und Solarzelle abgeloetet (Pads P170-P173).

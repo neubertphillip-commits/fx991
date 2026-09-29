@@ -158,6 +158,7 @@ Damit waeren es etwa 16-18 Leitungen: ein MCP23017 hat 16, der zweite (0x21) ist
 Karte: `rueckseite_punkte.jpg` (Rueckseite, Chip oben, 57 Durchkontaktierungen nummeriert).
 Die Lage wurde aus den Fotos berechnet (Rueckseite gespiegelt auf die Vorderseite gelegt). Zu welcher
 Leitung ein Punkt gehoert, sieht man auf den Fotos nicht sicher: Die Bahnen liegen unter dem Lack.
+Loeten: auf den silbernen Ring um den Punkt (vernickelt, nimmt Zinn; getestet), nicht in die schwarze Mitte.
 Deshalb messen: Durchgangspruefer, eine Spitze auf die Kohlehaelfte eines Referenzkontakts
 (die Haelfte, die auch mit dem zweiten Kontakt piept), mit der anderen die Punkte absuchen.
 

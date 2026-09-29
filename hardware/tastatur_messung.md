@@ -24,7 +24,7 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 | K | 4, 12, 18, 24, 30 |
 | L | 17, 23, 29 |
 | M | 7, 8, 16, 22, 28 |
-| N | 10, 14, 20, 26 |
+| N | 2, 10, 14, 20, 26 |
 | O | 20, 21 |
 | P | 14, 15 |
 | Q | 1, 2, 3, 5, 7 |
@@ -33,14 +33,14 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 | T | 16, 17, 18 |
 | U | 8, 11, 12 |
 | V | 23, 24 |
-| EB | 2, 4, 13, 19, 22, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
+| EB | 4, 13, 19, 22, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
 
 ## Tasten (50 von 50 vollstaendig)
 
 | Kontakt | Taste (vermutlich) | Haelfte 1 | Haelfte 2 |
 |---|---|---|---|
 | 1 |  | C | Q |
-| 2 |  | Q | EB |
+| 2 |  | Q | N |
 | 3 |  | Q | R |
 | 4 |  | K | EB |
 | 5 | hoch | H | Q |
@@ -92,11 +92,17 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 
 Vorderseite komplett.
 
+## Verbindungen ueber die Rueckseite (gemessen)
+
+| Gruppe | verbunden | Anmerkung |
+|---|---|---|
+| X1 | EB 32, 37, 42 | Spalte 2-5-8; 47 (.) nicht genannt |
+
 ## Vermutete Matrix (noch zu bestaetigen)
 
 Viele Vorderseiten-Leitungen sind vermutlich ueber die Rueckseite verbunden. Aus dem Muster:
 
-- Spalten: C (1/4/7-Spalte), N (+ EB 2, 32, 37, 42, 47?), H (+ D, EB 48?), M (+ EB 34, 39, 44, 49?),
+- Spalten: C (1/4/7-Spalte), N (+ 2; X1 = EB 32, 37, 42; 47?), H (+ D, EB 48?), M (+ EB 34, 39, 44, 49?),
   L, K, dazu E und R (evtl. mit L oder K verbunden). EB 46 vermutlich an C.
 - Zeilen: A (0-Reihe), B (1-Reihe), F (4-Reihe), G (7-Reihe), P+T+EB13, O+V+EB19+EB22,
   I+J+EB25, Q, S, U.

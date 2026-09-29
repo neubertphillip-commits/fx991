@@ -5,7 +5,7 @@ Gemessen im 2k-Bereich auf den hellgrauen Kohlekontakten (die schwarzen Bahnen s
 
 Jede Taste hat zwei Haelften, also zwei Eintraege. Buchstaben = Leitungen auf der Vorderseite,
 **EB** = Einzelblock: Haelfte mit keiner anderen verbunden, geht ueber ihre Durchfuehrung auf die
-Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
+Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Haelften EB.
 
 ## Leitungen Vorderseite
 
@@ -27,24 +27,22 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 | N | 10, 14, 20, 26 |
 | O | 20, 21 |
 | P | 14, 15 |
-| EB | 46, 47, 48, 49, 44, 42, 37, 39, 34, 32, 25, 19, 13, 2, 4, 9 |
+| Q | 1, 2, 3, 5, 7 |
+| EB | 2, 4, 4, 13, 19, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
 
-Unsicher beim Abschreiben der Notizen: N = "26 20 20 14" als 26, 20, **10**, 14 gelesen;
-bei EB die letzten beiden als **4** und **9** gelesen.
-
-## Tasten (33 von 50 vollstaendig)
+## Tasten (37 von 50 vollstaendig)
 
 | Kontakt | Taste (vermutlich) | Haelfte 1 | Haelfte 2 |
 |---|---|---|---|
-| 1 |  | C | ? |
-| 2 |  | EB | ? |
-| 3 |  | ? | ? |
-| 4 |  | EB | ? |
-| 5 | hoch | H | ? |
+| 1 |  | C | Q |
+| 2 |  | Q | EB |
+| 3 |  | Q | ? |
+| 4 |  | EB | EB |
+| 5 | hoch | H | Q |
 | 6 | links | H | ? |
-| 7 | rechts | M | ? |
+| 7 | rechts | M | Q |
 | 8 | runter | M | ? |
-| 9 |  | C | EB |
+| 9 |  | C | ? |
 | 10 |  | N | ? |
 | 11 |  | ? | ? |
 | 12 |  | K | ? |
@@ -87,4 +85,4 @@ bei EB die letzten beiden als **4** und **9** gelesen.
 | 49 | Ans | A | EB |
 | 50 | EXE | A | B |
 
-Noch offen (eine oder beide Haelften fehlen): 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 16, 17, 18, 22, 23, 24
+Noch offen (eine oder beide Haelften fehlen): 3, 6, 8, 9, 10, 11, 12, 16, 17, 18, 22, 23, 24

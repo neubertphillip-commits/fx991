@@ -107,6 +107,36 @@ Vorderseite komplett.
 | N | + X1 (EB 32, 37, 42) + EB 47 | Spalte 2-5-8-. (42-14, 47-26 gemessen) |
 | M | + X2 (EB 34, 39, 44) | Spalte DEL-×-+ (44-16 gemessen) |
 | H | + D (38, 43) + EB 48 | Spalte 9-6-3-×10ˣ (38-33, 48-33 gemessen) |
+| X4 | + EB 46 | 46 (0) haengt an Zeile 19-24 (46-19/20/21 gemessen) |
+| L | = R = E | 11-17-40 gemessen: eine gemeinsame Spalte |
+
+## Leitungen (Stand)
+
+15 Leitungen, passt auf einen MCP23017 (16 Pins).
+
+| Leitung | besteht aus | Tasten (Kontakte) |
+|---|---|---|
+| A | A | 46-50 |
+| B | B | 41-45, 50 |
+| F | F | 36-40 |
+| G | G | 31-35 |
+| X3 | I + J + EB 25 | 25-30 |
+| X4 | O + V + EB 19, 22, 46 | 19-24, 46 |
+| X5 | P + T + EB 13 | 13-18 |
+| Q | Q (+ EB 4?) | 1, 2, 3, 5, 7 (4?) |
+| X6 | S + U | 6, 8, 9, 10, 11, 12 |
+| C | C | 1, 9, 13, 19, 25, 31, 36, 41 |
+| N | N + X1 + EB 47 | 2, 10, 14, 20, 26, 32, 37, 42, 47 |
+| H | H + D + EB 48 | 5, 6, 15, 21, 27, 33, 38, 43, 48 |
+| M | M + X2 (+ EB 49?) | 7, 8, 16, 22, 28, 34, 39, 44 (49?) |
+| L | L + R + E | 3, 11, 17, 23, 29, 35, 40, 45 |
+| K | K | 4, 12, 18, 24, 30 |
+
+Keine reine Zeilen/Spalten-Matrix: 0 (A-X4), . (A-N) und EXE (A-B) verbinden Leitungen, die sonst
+beide Zeilen waeren (A-B-N bilden ein Dreieck). Die Firmware muss deshalb jede Leitung einzeln
+treiben und alle anderen lesen.
+
+Noch offen: 4-EB (Q?), 49-EB (M?), EXE zweite Haelfte (B bestaetigen).
 
 ## Vermutete Matrix (noch zu bestaetigen)
 

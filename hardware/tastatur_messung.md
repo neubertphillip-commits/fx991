@@ -31,13 +31,13 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 | P | 14, 15 |
 | Q | 1, 2, 3, 5, 7 |
 | R | 3, 11 |
-| S | 9, 10 |
+| S | 6, 9, 10 |
 | T | 16, 17, 18 |
 | U | 8, 11, 12 |
 | V | 23, 24 |
 | EB | 4, 13, 19, 22, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
 
-## Tasten (49 von 50 vollstaendig, 6 offen)
+## Tasten (50 von 50 vollstaendig)
 
 | Kontakt | Taste (vermutlich) | Haelfte 1 | Haelfte 2 |
 |---|---|---|---|
@@ -46,7 +46,7 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 | 3 |  | Q | R |
 | 4 |  | K | EB |
 | 5 | hoch | H | Q |
-| 6 | links | H | ? |
+| 6 | links | H | S |
 | 7 | rechts | M | Q |
 | 8 | runter | M | U |
 | 9 |  | C | S |
@@ -103,7 +103,7 @@ Vorderseite komplett.
 | X3 | I + J + EB 25 (Kontakte 25-30) | Zeile 25-30, bestaetigt |
 | X4 | O + V + EB 19, 22 (Kontakte 19-24) | Zeile 19-24, bestaetigt |
 | X5 | P + T + EB 13 (Kontakte 13-18) | Zeile 13-18, bestaetigt |
-| X6 | S + U (Kontakte 8, 9, 10, 11, 12) | Zeile oben, bestaetigt. Kontakt 6 gehoert nicht dazu |
+| X6 | S + U (Kontakte 6, 8, 9, 10, 11, 12) | Zeile oben, bestaetigt |
 
 ## Vermutete Matrix (noch zu bestaetigen)
 

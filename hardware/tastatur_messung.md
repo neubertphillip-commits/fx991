@@ -153,30 +153,34 @@ Viele Vorderseiten-Leitungen sind vermutlich ueber die Rueckseite verbunden. Aus
 
 Damit waeren es etwa 16-18 Leitungen: ein MCP23017 hat 16, der zweite (0x21) ist vorhanden.
 
-## Loetpunkte Rueckseite (zu messen)
+## Loetpunkte Rueckseite
 
-Karte: `rueckseite_punkte.jpg` (Rueckseite, Chip oben, 57 Durchkontaktierungen nummeriert).
-Die Lage wurde aus den Fotos berechnet (Rueckseite gespiegelt auf die Vorderseite gelegt). Zu welcher
-Leitung ein Punkt gehoert, sieht man auf den Fotos nicht sicher: Die Bahnen liegen unter dem Lack.
-Loeten: auf den silbernen Ring um den Punkt (vernickelt, nimmt Zinn; getestet), nicht in die schwarze Mitte.
-Deshalb messen: Durchgangspruefer, eine Spitze auf die Kohlehaelfte eines Referenzkontakts
-(die Haelfte, die auch mit dem zweiten Kontakt piept), mit der anderen die Punkte absuchen.
+Karten: `rueckseite_punkte.jpg` (alle 57 Durchkontaktierungen nummeriert), `loetpunkte.jpg` (die 16 zum Loeten).
+Loeten auf den silbernen Ring um den Punkt (nimmt Zinn), nicht in die schwarze Mitte.
 
-| Leitung | MCP | Referenz (gemeinsame Leitung von) | Punkt |
-|---|---|---|---|
-| C | GPA0 | 1 + 9 | |
-| N | GPA1 | 2 + 10 | |
-| H | GPA2 | 5 + 6 | |
-| M | GPA3 | 7 + 8 | |
-| L | GPA4 | 3 + 11 | |
-| K | GPA5 | 12 + 18 | |
-| A | GPA6 | 46 + 47 | |
-| ON | GPA7 | 4 (die Haelfte, die nicht mit 12 piept) | |
-| Q | GPB0 | 1 + 2 | |
-| X5 | GPB1 | 13 + 14 | |
-| X4 | GPB2 | 19 + 20 | |
-| X3 | GPB3 | 25 + 26 | |
-| G | GPB4 | 31 + 32 | |
-| F | GPB5 | 36 + 37 | |
-| B | GPB6 | 41 + 42 | |
-| X6 | GPB7 | 9 + 10 | |
+Zuordnung aus den Fotos berechnet: Rueckseite gespiegelt auf das Vorderseitenfoto (volle Aufloesung)
+gelegt, dort die Kohleflaechen zwischen den gruenen Trennlinien segmentiert (Tastenscheiben ausgespart)
+und fuer jeden Punkt geschaut, welche Tasten seine Flaeche beruehrt. Die gemeinsame Leitung dieser
+Tasten ist die Leitung des Punkts; beruehrt die Flaeche nur eine Taste, ist es deren andere Haelfte (EB).
+Jede Taste hat genau zwei Flaechen, die Mengen passen exakt zur Tabelle oben.
+
+| Leitung | MCP | Punkt | Flaeche beruehrt Tasten | Alternativen |
+|---|---|---|---|---|
+| C | GPA0 | 12 | 1, 9, 13, 19, 25, 31, 36, 41 | - |
+| N | GPA1 | 21 | 10, 14, 20, 26 | 5, 3 (EB 2), 29 (EB 32), 37 (EB 37), 44 (EB 42), 56 (EB 47) |
+| H | GPA2 | 28 | 5, 6, 15, 21, 27, 33 | 38 (D: 38, 43), 51 (EB 48) |
+| M | GPA3 | 17 | 7, 8, 16, 22, 28 | 19, 26 (EB 34), 33 (EB 39), 46 (EB 44) |
+| L | GPA4 | 9 | 17, 23, 29 | 16, 4 (R: 3, 11), 32 (E: 35, 40, 45) |
+| K | GPA5 | 13 | 12, 18, 24, 30 | 1 oder 2 (Haelfte K von 4) |
+| A | GPA6 | 57 | 46, 47, 48, 49, 50 | 50 |
+| ON | GPA7 | 1 oder 2 | nur 4 | der von beiden, der NICHT mit Punkt 13 piept |
+| Q | GPB0 | 58 | 1, 2, 3, 5, 7 | - (links neben dem Loch bei Taste 1; im Rueckseitenfoto unter der Klemme) |
+| X5 | GPB1 | 7 | 16, 17, 18 | 10 (P: 14, 15), 11 (EB 13) |
+| X4 | GPB2 | 14 | 23, 24 | 20 (O: 20, 21), 22/24 (EB 19) |
+| X3 | GPB3 | 15 | 28, 29, 30 | 25 (I: 26, 27), 23 (EB 25) |
+| G | GPB4 | 30 | 31, 32, 33, 34, 35 | 31 |
+| F | GPB5 | 36 | 36, 37, 38, 39, 40 | 39, 49 (EB 49) |
+| B | GPB6 | 45 | 41, 42, 43, 44, 45, 50 | - |
+| X6 | GPB7 | 8 | 8, 11, 12 | 6 (S: 6, 9, 10) |
+
+Vor dem Loeten je Punkt einmal mit dem Durchgangspruefer gegen eine der genannten Tasten bestaetigen.

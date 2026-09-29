@@ -30,9 +30,12 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | Q | 1, 2, 3, 5, 7 |
 | R | 3, 11 |
 | S | 6, 9, 10 |
-| EB | 2, 4, 4, 13, 19, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
+| T | 16, 17, 18 |
+| U | 8, 11, 12 |
+| V | 23, 24 |
+| EB | 2, 4, 4, 13, 19, 22, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
 
-## Tasten (41 von 50 vollstaendig)
+## Tasten (50 von 50 vollstaendig)
 
 | Kontakt | Taste (vermutlich) | Haelfte 1 | Haelfte 2 |
 |---|---|---|---|
@@ -43,23 +46,23 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | 5 | hoch | H | Q |
 | 6 | links | H | S |
 | 7 | rechts | M | Q |
-| 8 | runter | M | ? |
+| 8 | runter | M | U |
 | 9 |  | C | S |
 | 10 |  | N | S |
-| 11 |  | R | ? |
-| 12 |  | K | ? |
+| 11 |  | R | U |
+| 12 |  | K | U |
 | 13 |  | C | EB |
 | 14 |  | N | P |
 | 15 |  | H | P |
-| 16 |  | M | ? |
-| 17 |  | L | ? |
-| 18 |  | K | ? |
+| 16 |  | M | T |
+| 17 |  | L | T |
+| 18 |  | K | T |
 | 19 |  | C | EB |
 | 20 |  | N | O |
 | 21 |  | H | O |
-| 22 |  | M | ? |
-| 23 |  | L | ? |
-| 24 |  | K | ? |
+| 22 |  | M | EB |
+| 23 |  | L | V |
+| 24 |  | K | V |
 | 25 |  | C | EB |
 | 26 |  | I | N |
 | 27 |  | H | I |
@@ -87,4 +90,17 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | 49 | Ans | A | EB |
 | 50 | EXE | A | B |
 
-Noch offen (eine Haelfte fehlt): 8, 11, 12, 16, 17, 18, 22, 23, 24
+Vorderseite komplett.
+
+## Vermutete Matrix (noch zu bestaetigen)
+
+Viele Vorderseiten-Leitungen sind vermutlich ueber die Rueckseite verbunden. Aus dem Muster:
+
+- Spalten: C (1/4/7-Spalte), N (+ EB 2, 32, 37, 42, 47?), H (+ D, EB 48?), M (+ EB 34, 39, 44, 49?),
+  L, K, dazu E und R (evtl. mit L oder K verbunden). EB 46 vermutlich an C.
+- Zeilen: A (0-Reihe), B (1-Reihe), F (4-Reihe), G (7-Reihe), P+T+EB13, O+V+EB19+EB22,
+  I+J+EB25, Q, S, U.
+- Taste 4 (beide Haelften EB): vermutlich ON, eigene Leitung.
+- EXE (50) liegt zwischen A und B.
+
+Damit waeren es etwa 16-18 Leitungen: ein MCP23017 hat 16, der zweite (0x21) ist vorhanden.

@@ -156,9 +156,10 @@ Damit waeren es etwa 16-18 Leitungen: ein MCP23017 hat 16, der zweite (0x21) ist
 ## Loetpunkte Rueckseite
 
 Karten: `rueckseite_punkte.jpg` (alle 57 Durchkontaktierungen nummeriert), `loetpunkte.jpg` (die 16 zum Loeten).
-Der silberne Ring leitet, nimmt aber kein Zinn (vermutlich Silberleitpaste, nicht mit Hitze
+Der silberne Ring leitet, nimmt aber kein Zinn, auch mit Flussmittel nicht (getestet; vermutlich Silberleitpaste, nicht mit Hitze
 qualen). Loeten stattdessen auf die Leiterbahn, die vom Ring weggeht: 2-3 mm neben dem Ring den gruenen
 Lack abkratzen, blankes Kupfer mit Flussmittel verzinnen, Draht anloeten, danach Durchgang zur Taste pruefen.
+Oder ohne Hitze: Draht mit Silber-Leitkleber (2K-Epoxid) auf den Ring kleben, mit Kapton gegen Zug sichern.
 
 Zuordnung aus den Fotos berechnet: Rueckseite gespiegelt auf das Vorderseitenfoto (volle Aufloesung)
 gelegt, dort die Kohleflaechen zwischen den gruenen Trennlinien segmentiert (Tastenscheiben ausgespart)

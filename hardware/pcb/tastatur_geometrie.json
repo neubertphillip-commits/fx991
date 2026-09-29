@@ -1,5 +1,5 @@
 {
- "quelle": "Fotos auf 5-mm-Karopapier (29.09.2026), entzerrt. Genauigkeit ca. 0,5-1 mm, Tasten mit unsicher=true geschaetzt (Schatten). Lochdurchmesser geschaetzt. mm, Tastenseite von vorn, Ursprung oben links, y nach unten. Umriss: rechte Haelfte der Rueckseite gespiegelt (links oben beschaedigt).",
+ "quelle": "Fotos auf 5-mm-Karopapier (29.09.2026), entzerrt. Genauigkeit ca. 0,5-1 mm, Tasten mit unsicher=true geschaetzt (Schatten). Lochdurchmesser geschaetzt. mm, Tastenseite von vorn, Ursprung oben links, y nach unten. Umriss: rechte Haelfte der Rueckseite gespiegelt (links oben beschaedigt). Abgleich mit Foto der Silikonmatte (Noppen ca. 4 mm): 44 Noppen erkannt, Abweichung Median 0,2 mm, max. 0,6 mm; Tasten 1, 2, 22 danach korrigiert (waren 0,8-2,5 mm daneben).",
  "platine": {
   "breite": 65.45,
   "hoehe": 98.4,
@@ -426,17 +426,19 @@
  "tasten": [
   {
    "nr": 1,
-   "x": 3.95,
-   "y": 3.79,
+   "x": 4.74,
+   "y": 6.07,
    "d": 7.3,
-   "unsicher": true
+   "unsicher": false,
+   "quelle": "Mattenfoto"
   },
   {
    "nr": 2,
-   "x": 14.11,
-   "y": 3.79,
+   "x": 14.5,
+   "y": 5.94,
    "d": 6.3,
-   "unsicher": false
+   "unsicher": false,
+   "quelle": "Mattenfoto"
   },
   {
    "nr": 3,
@@ -573,10 +575,11 @@
   },
   {
    "nr": 22,
-   "x": 37.69,
-   "y": 37.04,
-   "d": 5.9,
-   "unsicher": false
+   "x": 38.47,
+   "y": 36.74,
+   "d": 6.9,
+   "unsicher": false,
+   "quelle": "Mattenfoto"
   },
   {
    "nr": 23,

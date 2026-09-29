@@ -103,7 +103,9 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 7. Eigene Tastaturplatine statt Anzapfen (Ringe der Casio-Platine nehmen kein Zinn): gleicher Umriss,
    ENIG-Kontakte fuer die Matte, MCP23017 bestueckt, echte Matrix. `hardware/pcb/`: Geometrie aus Fotos
    (tastatur_geometrie.json, ca. 0,5-1 mm genau), Druckvorlage fuer den Papiertest (vorlage.py/.pdf).
-   Offen: Papiertest mit Platine und Matte, Platinendicke, Lochdurchmesser, dann KiCad-Entwurf.
+   Mit Mattenfoto abgeglichen (Noppen 4 mm, Zapfen 3 mm, Loecher 4,8-6 mm, wird angeklebt).
+   Entwurf 1 steht: tastatur_pcb.py (KiCad 7 + Freerouting), 0,6 mm, ENIG, Matrix 9x7, DRC ok,
+   Fertigungsdaten fuer JLCPCB in fertigung/. Offen: Papiertest, Firmware auf Matrix umstellen, bestellen.
 8. Spaeter, wenn Hardware und Firmware laufen: eine eigene Android-App (.apk) statt Termux,
    fuer alles, nicht eine APK pro Aufgabe. Bis dahin Termux-Bridge.
    - Aufbau: Kern (Hintergrunddienst, Anmeldung, ein gesicherter Kanal) + Module, per

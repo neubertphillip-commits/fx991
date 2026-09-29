@@ -1,0 +1,4 @@
+Comment,Designator,Footprint,LCSC Part #
+MCP23017-E/SO,U1,SOIC-28W,
+100nF,C1,0805,C49678
+4.7k,"R1,R2",0805,C17673

@@ -58,8 +58,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
   nicht erreichbar -> Firmware-Updates per WLAN (OTA) mit automatischem Rollback.
 - Display (Idee, Masse noch messen): Panel quer (aktiv 48,96 x 36,72 mm) hinter Display- UND
   Solarfenster. Dazu innen oben alles wegschneiden/schleifen (Knopfzellenhalter, Stege um das
-  Solarfenster), die Front mit dem Steg zwischen den Fenstern bleibt. Grob aus einem Foto: Displayfenster
-  ~60 x 26 mm, Steg ~4 mm, Solarfenster ~33 x 14 mm -> unten Hauptbild (~640 x 340 px), oben durchs
+  Solarfenster), die Front mit dem Steg zwischen den Fenstern bleibt. Displayfenster gemessen 62 x 25 mm
+  (sichtbar ~640 x 327 px = 80 x 20 Zeichen bei 8x16). Grob aus einem Foto: Steg ~4 mm, Solarfenster ~33 x 14 mm -> unten Hauptbild (~640 x 340 px), oben durchs
   Solarfenster ein Streifen (~430 x 90 px) als zweiter kleiner Bildschirm (Status, Uhr, WLAN, Akku).
 - Aus = Tiefschlaf (SHIFT+AC oder 10 min), Wecken per Taste ueber INTA (D0, RTC-faehig). Watchdog 30 s.
 - Datei-Viewer (Modus DATEIEN): Ordner auf dem Handy (`bridge.py --files`), Abgleich per

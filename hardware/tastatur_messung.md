@@ -5,7 +5,7 @@ Gemessen im 2k-Bereich auf den hellgrauen Kohlekontakten (die schwarzen Bahnen s
 
 Jede Taste hat zwei Haelften, also zwei Eintraege. Buchstaben = Leitungen auf der Vorderseite,
 **EB** = Einzelblock: Haelfte mit keiner anderen verbunden, geht ueber ihre Durchfuehrung auf die
-Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Haelften EB.
+Rueckseite (dort noch zu messen, welche EB zusammengehoeren).
 
 ## Leitungen Vorderseite
 
@@ -21,7 +21,7 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | H | 5, 6, 15, 21, 27, 33 |
 | I | 26, 27 |
 | J | 28, 29, 30 |
-| K | 12, 18, 24, 30 |
+| K | 4, 12, 18, 24, 30 |
 | L | 17, 23, 29 |
 | M | 7, 8, 16, 22, 28 |
 | N | 10, 14, 20, 26 |
@@ -33,7 +33,7 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | T | 16, 17, 18 |
 | U | 8, 11, 12 |
 | V | 23, 24 |
-| EB | 2, 4, 4, 13, 19, 22, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
+| EB | 2, 4, 13, 19, 22, 25, 32, 34, 37, 39, 42, 44, 46, 47, 48, 49 |
 
 ## Tasten (50 von 50 vollstaendig)
 
@@ -42,7 +42,7 @@ Rueckseite (dort noch zu messen, welche EB zusammengehoeren). Taste 4: beide Hae
 | 1 |  | C | Q |
 | 2 |  | Q | EB |
 | 3 |  | Q | R |
-| 4 |  | EB | EB |
+| 4 |  | K | EB |
 | 5 | hoch | H | Q |
 | 6 | links | H | S |
 | 7 | rechts | M | Q |
@@ -100,7 +100,7 @@ Viele Vorderseiten-Leitungen sind vermutlich ueber die Rueckseite verbunden. Aus
   L, K, dazu E und R (evtl. mit L oder K verbunden). EB 46 vermutlich an C.
 - Zeilen: A (0-Reihe), B (1-Reihe), F (4-Reihe), G (7-Reihe), P+T+EB13, O+V+EB19+EB22,
   I+J+EB25, Q, S, U.
-- Taste 4 (beide Haelften EB): vermutlich ON, eigene Leitung.
+- Kontakt 4: K + EB (zuerst als EB/EB notiert, dann an K gefunden).
 - EXE (50) liegt zwischen A und B.
 
 Damit waeren es etwa 16-18 Leitungen: ein MCP23017 hat 16, der zweite (0x21) ist vorhanden.

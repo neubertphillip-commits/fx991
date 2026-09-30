@@ -235,7 +235,24 @@ alles ohne Tastatur testen. Befehle: `:calc` `:term` `:cam` `:files` (Modus), `:
 (alle Tastenereignisse protokollieren), `:new`, `:ping`,
 `:key NAME` (Taste druecken, z.B. `:key EXE`, `:key sin`), `:rec` (Spracheingabe
 starten/abschicken), `:sync` (Dateien abgleichen), `:ota` (WLAN 5 min an),
-`:off` (ausschalten), `:help`.
+`:off` (ausschalten), `:scan` (WLAN-Netze in Reichweite), `:frame` / `:frame 0`
+(ganzen Bildschirm als Block senden, fuer `deckterm`), `:help`.
+
+## Laptop als Display und Tastatur (`tools/deckterm.py`)
+
+Solange Panel und Tastatur fehlen, uebernimmt der Laptop beides; der XIAO haengt per USB
+dran und laeuft mit der normalen Firmware (Kamera, Mikro, WLAN, Bridge echt):
+
+```sh
+pip install pyserial
+python tools/deckterm.py            # --port /dev/ttyACM0
+```
+
+Zeigt den Bildschirm 60x38 wie das spaetere Panel (Status invers, Eingabezeile mit
+Cursor), darunter das serielle Log. Tasten wie im Simulator (Tabelle unten), `v` startet
+die Spracheingabe (EXE/ALPHA schickt ab, Esc bricht ab). Nach Tiefschlaf oder Reset
+verbindet es sich selbst neu. Unter Linux braucht der Nutzer Zugriff auf `/dev/ttyACM0`
+(Gruppe `uucp` bzw. `dialout`).
 
 ## Tastatur
 

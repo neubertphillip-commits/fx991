@@ -11,6 +11,8 @@ uint32_t printedTotal = 0;
 char lastStatus[Screen::LINE_BYTES];
 char lastInput[Screen::INPUT_BYTES];
 
+bool frames = false;  // ganze Bildschirme statt Zeilenprotokoll (setFrames)
+
 constexpr uint8_t CONTEXT_LINES = 8;  // beim Moduswechsel so viele alte Zeilen zeigen
 
 void printLines(const Screen& s, uint32_t from) {
@@ -34,11 +36,29 @@ bool showJpeg(const uint8_t*, size_t) { return false; }
 
 void power(bool on) {
   Serial.println(on ? "[display] an" : "[display] aus");
+  if (!on && frames) Serial.print("\x02OFF\n\x03\n");
   shown = nullptr;  // nach dem Einschalten alles neu ausgeben
+}
+
+void setFrames(bool on) {
+  frames = on;
+  // Ganze Bloecke duerfen nicht verloren gehen: kurz warten statt verwerfen,
+  // solange jemand zuhoert (ohne Monitor wieder sofort weiter).
+  Serial.setTxTimeoutMs(on ? 100 : 0);
+  shown = nullptr;
 }
 
 void render(const Screen& s) {
   if (&s == shown && s.version() == shownVersion) return;
+
+  if (frames) {
+    shown = &s;
+    shownVersion = s.version();
+    Serial.printf("\x02" "F\n%s\n", s.status());
+    for (uint8_t r = 0; r < Screen::VIEW_ROWS; r++) Serial.printf("%s\n", s.viewLine(r));
+    Serial.printf("%s\n%d\n\x03\n", s.input(), s.inputMarked() ? 1 : 0);
+    return;
+  }
 
   if (&s != shown) {
     shown = &s;

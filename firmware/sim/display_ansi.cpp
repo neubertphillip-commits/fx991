@@ -94,6 +94,8 @@ void begin() {}
 
 bool showJpeg(const uint8_t*, size_t) { return false; }
 
+void setFrames(bool) {}
+
 void power(bool on) {
   if (on) {
     shown = nullptr;  // alles neu zeichnen

@@ -851,6 +851,10 @@ void serialCommand(const char* cmd) {
     Serial.printf("[app] Tastenprotokoll %s\n", logKeys ? "an" : "aus");
   } else if (!strcmp(cmd, "wifi") || !strcmp(cmd, "ota")) {
     stayOnline();
+  } else if (!strcmp(cmd, "frame") || !strcmp(cmd, "frame 1")) {
+    display::setFrames(true);
+  } else if (!strcmp(cmd, "frame 0")) {
+    display::setFrames(false);
   } else if (!strcmp(cmd, "scan")) {
     net::scan();
   } else if (!strcmp(cmd, "new")) {

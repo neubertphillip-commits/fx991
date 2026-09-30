@@ -10,7 +10,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 ## Hardware (bestellt 25.09.2026)
 
 - Seeed XIAO ESP32S3 Sense (OV3660-Kamera, abnehmbare Sense-Platine, LiPo-Lader onboard, 11 GPIO an der Kante)
-- BuyDisplay 2,4" Bar-Type IPS 480x640 (ER-TFT024-5: aussen 42,62 x 58,50 x 2,2 mm, aktiv 36,72 x 48,96 mm, hochkant), SPI+RGB, 40-Pin-ZIF, mit LT7680-Controllerboard (48,2 x 32 mm +-0,3; SPI -> RGB, eigener Bildspeicher, RA8876-aehnlicher Befehlssatz; LovyanGFX unterstuetzt ihn vermutlich nicht direkt, BuyDisplay-Beispielcode als Basis)
+- BuyDisplay 2,4" Bar-Type IPS 480x640 (ER-TFT024-5: aussen 42,62 x 58,50 x 2,2 mm, aktiv 36,72 x 48,96 mm, hochkant), SPI+RGB, 40-Pin-ZIF, mit LT7680-Controllerboard (48,2 x 32 x 4,5 mm; SPI -> RGB, eigener Bildspeicher, RA8876-aehnlicher Befehlssatz; LovyanGFX unterstuetzt ihn vermutlich nicht direkt, BuyDisplay-Beispielcode als Basis)
 - LiPo 3,7 V 300 mAh, 40x30x3 mm, an BAT-Pads des XIAO
 - Kupferlackdraht 0,1 mm zum Anzapfen der Tastaturpads
 
@@ -98,7 +98,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 4. ~~Kamera (OV3660) -> Binaer-Frame an Bridge~~ geschrieben, auf Hardware testen.
 5. ~~Spracheingabe~~ geschrieben (Simulator + Bridge getestet, whisper.cpp in Termux und Mikro ungetestet).
 6. Einbau ohne Loecher: OTA, Watchdog, Tiefschlaf sind geschrieben (kompiliert, Simulator getestet).
-   Offen: Gehaeuse-Innenmasse (Hoehe XIAO+Sense ~15 mm!), Platz fuer Qi-Spule + Akku an der
+   Innentiefe ca. 8-10 mm (gemessen); oben Panel 2,2 + LT7680-Board 4,5 = 6,7 mm -> XIAO passt dort
+   nicht dahinter. Offen: Tiefe hinter der Tastaturplatine (Rueckseite Platine bis Rueckdeckel), (Hoehe XIAO+Sense ~15 mm!), Platz fuer Qi-Spule + Akku an der
    Rueckwand, Abstand Spule-Mappe (< ~5 mm), Ruhestrom im Tiefschlaf und des Qi-Senders messen.
 7. Eigene Tastaturplatine statt Anzapfen (Ringe der Casio-Platine nehmen kein Zinn): gleicher Umriss,
    ENIG-Kontakte fuer die Matte, MCP23017 bestueckt, echte Matrix. `hardware/pcb/`: Geometrie aus Fotos

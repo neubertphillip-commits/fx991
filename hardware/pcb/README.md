@@ -64,3 +64,30 @@ die Pads auf der falschen Lage). Um die Loecher liegen Sperrflaechen fuer Bahnen
 - Die Loecher sind absichtlich groesser (4,8-6 mm fuer 3-mm-Zapfen); die Platine wird beim Einbau
   an den Tasten ausgerichtet und festgeklebt.
 - Die Firmware braucht fuer diese Platine einen Matrix-Scan (Tabelle oben) statt der 16 Casio-Leitungen.
+
+## Idee Version 2: Platine ersetzt die Sense-Platine (Variante C, geprueft 30.09.2026)
+
+Ziel: XIAO flach auf der Rueckseite, Kamera und Mikro direkt auf unserer Platine statt der
+Sense-Platine (die mit Kamera ~15 mm hoch ist; hinter der Tastaturplatine sind nur ~4 mm).
+
+Was die Sense-Platine ueber den B2B-Stecker vom XIAO bekommt (Seeed-Doku, oshw-xiao-series):
+
+| Funktion | GPIO |
+|---|---|
+| Kamera XMCLK | 10 |
+| Kamera PCLK / VSYNC / HREF | 13 / 38 / 47 |
+| Kamera Y2..Y9 | 15, 17, 18, 16, 14, 12, 11, 48 |
+| Kamera SCCB SCL / SDA | 39 / 40 |
+| PDM-Mikro CLK / DATA | 42 / 41 |
+| SD-Karte CS (SCK/MISO/MOSI = D8/D9/D10) | 21 (brauchen wir nicht) |
+
+Dazu 3V3/GND. Fuer unsere Platine waeren noetig: B2B-Gegenstecker, 24-pol. 0,5-mm-FPC-Buchse fuer
+die OV3660, PDM-Mikrofon, Entkopplung. Footprint fuer den XIAO (SMD): Seeed-Bibliothek
+`XIAO-ESP32-S3-SMD.kicad_mod` (oshw-xiao-series).
+
+Offen / Risiken:
+- Genaues B2B-Stecker-Teil und seine Lage unter dem XIAO stehen nur in Seeeds
+  `XIAO_ESP32S3_ExpBoard_v1.0_SCH&PCB_230324.zip` (files.seeedstudio.com, hier gesperrt).
+- Hoehe: Der XIAO sitzt dann auf dem gesteckten B2B (~0,6-1 mm) statt flach, also ~4,3-4,5 mm
+  gesamt; hinter der Platine sind ~4 mm plus Rueckdeckel-Wanne (noch messen).
+- Die Kantenpads des XIAO (I2C, SPI, Strom) muessen den Spalt zur Platine ueberbruecken.

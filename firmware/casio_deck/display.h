@@ -22,7 +22,8 @@ void power(bool on);
 
 // Serielles Backend: statt des Zeilenprotokolls bei jeder Aenderung den ganzen
 // Bildschirm als Block senden (fuer tools/deckterm.py, Laptop als Display).
-// Block: "\x02F\n" Status "\n" VIEW_ROWS Zeilen "\n" Eingabe "\n" 0/1 (markiert) "\n\x03\n".
+// Block: "\x02F COLS VIEW_ROWS\n" Status "\n" VIEW_ROWS Zeilen "\n" Eingabe "\n"
+// 0/1 (markiert) "\n\x03\n".
 // Ausgeschaltet: "\x02OFF\n\x03\n". Andere Backends ignorieren es.
 void setFrames(bool on);
 

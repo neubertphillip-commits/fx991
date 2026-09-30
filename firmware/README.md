@@ -254,6 +254,22 @@ die Spracheingabe (EXE/ALPHA schickt ab, Esc bricht ab). Nach Tiefschlaf oder Re
 verbindet es sich selbst neu. Unter Linux braucht der Nutzer Zugriff auf `/dev/ttyACM0`
 (Gruppe `uucp` bzw. `dialout`).
 
+### In Originalgroesse (`tools/deckview.py`)
+
+```sh
+pip install pyserial pygame-ce
+python tools/deckview.py            # --ppmm 6.2, falls die EDID nicht stimmt
+```
+
+Zeichnet das Panel pixelgenau (640x480 quer, 8x16-Konsolenfont aus
+`/usr/share/kbd/consolefonts`) hinter der Gehaeusefront, in echten Millimetern (Massstab
+aus der EDID des Monitors). Layout nach Variante A (CLAUDE.md): Hauptbild 80 x 20 im
+Displayfenster, Statusfelder und Uhr im Streifen des Solarfensters. Das ist die Vorlage fuer
+den LT7680-Treiber. F1 Originalgroesse, F2 Roentgen (Gehaeuse durchsichtig, gruen aktive
+Flaeche, rot Aussenkontur, gelb Fenster), F3/F4 Zoom, F5 Panel-Pixel 1:1, F6 Lineal 50 mm
+(zum Nachmessen am Monitor), F12 Screenshot. `--run 'k:12+3=|w:1|shot:a.png|q'` spielt
+einen Ablauf ab (auch ohne Fenster mit `SDL_VIDEODRIVER=dummy`).
+
 ## Tastatur
 
 Ausgemessen am fx-991DE X, Protokoll in `hardware/tastatur_messung.md`, Kontaktnummern in

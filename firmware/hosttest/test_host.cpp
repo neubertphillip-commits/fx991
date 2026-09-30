@@ -280,7 +280,9 @@ static void testTextLayout() {
   std::string longText;
   for (int i = 0; i < 100; i++) longText += "wort ";
   std::vector<std::string> lines = layoutLines(longText, Screen::COLS, Screen::LINE_BYTES - 1);
-  CHECK(lines.size() == 9);  // 100 x 5 Zeichen, 60 je Zeile = 12 Woerter je Zeile
+  // 100 x "wort ": je Zeile passen (COLS + 1) / 5 Woerter (bei 60 Spalten 12, bei 80 16)
+  const size_t perLine = (Screen::COLS + 1) / 5;
+  CHECK(lines.size() == (100 + perLine - 1) / perLine);
   for (const auto& l : lines) CHECK(l.size() <= Screen::COLS);
 
   char out[3];

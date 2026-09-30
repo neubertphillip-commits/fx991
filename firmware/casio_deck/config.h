@@ -63,11 +63,13 @@ constexpr uint32_t KEY_SCAN_MS = 5;       // Scanintervall, solange eine Taste g
 constexpr uint8_t KEY_DEBOUNCE_SCANS = 3;  // so viele gleiche Scans = stabil (~25 ms)
 
 // ---------------------------------------------------------------------------
-// Display: 480x640 IPS, Textkonsole mit 8x16-Font -> 60x40 Zeichen.
-// Muss zu `bridge.py --cols` passen.
+// Display: 640x480 IPS quer hinter Display- und Solarfenster (CLAUDE.md, Variante A),
+// 8x16-Font. Sichtbar im Displayfenster: 640x327 px = 80 x 20 Zeichen (19 Inhalt +
+// Eingabe); die Statuszeile zeigt der Streifen im Solarfenster (457x100 px, 57 x 6).
+// Hochkant ohne Fenster waeren es 60 x 40. Muss zu `bridge.py --cols` passen.
 // ---------------------------------------------------------------------------
-constexpr uint8_t SCREEN_COLS = 60;
-constexpr uint8_t SCREEN_ROWS = 40;
+constexpr uint8_t SCREEN_COLS = 80;
+constexpr uint8_t SCREEN_ROWS = 21;
 
 // ---------------------------------------------------------------------------
 // Netzwerk

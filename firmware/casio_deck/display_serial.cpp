@@ -54,7 +54,7 @@ void render(const Screen& s) {
   if (frames) {
     shown = &s;
     shownVersion = s.version();
-    Serial.printf("\x02" "F\n%s\n", s.status());
+    Serial.printf("\x02" "F %u %u\n%s\n", Screen::COLS, Screen::VIEW_ROWS, s.status());
     for (uint8_t r = 0; r < Screen::VIEW_ROWS; r++) Serial.printf("%s\n", s.viewLine(r));
     Serial.printf("%s\n%d\n\x03\n", s.input(), s.inputMarked() ? 1 : 0);
     return;

@@ -69,6 +69,11 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
   ~457 x 100 px (px 183-639, Zeilen 0-99; 57 x 6 Zeichen bei 8x16) als zweiter Bildschirm (Status, Uhr,
   WLAN, Akku). Variante B (Panel hoch bis Oberkante Solarfenster): Streifen 196 px, Hauptbild nur 232 px.
   Nicht sichtbare Pixel bleiben schwarz; genaue Lage nach dem Einbau mit Testbild (Raster) einmessen.
+  Firmware steht seit 30.09. auf diesem Layout (80 x 21, Bridge `--cols 80`); Vorschau in Originalgroesse:
+  `firmware/tools/deckview.py`. Dort sichtbar: 8x16 ergibt nur 0,61 x 1,22 mm je Zeichen (sehr klein,
+  evtl. 12x24-Font fuers Hauptbild pruefen); die Panel-Aussenkontur (58,5 x 42,6 mm, mittig um die aktive
+  Flaeche angenommen) ragt ~3 mm unter und ~1,7 mm rechts ueber das Displayfenster hinaus: Platz im
+  Gehaeuse dort pruefen, FPC-Seite im Datenblatt klaeren.
 - Aus = Tiefschlaf (SHIFT+AC oder 10 min), Wecken per Taste ueber INTA (D0, RTC-faehig). Watchdog 30 s.
 - Datei-Viewer (Modus DATEIEN): Ordner auf dem Handy (`bridge.py --files`), Abgleich per
   CRC-32 ins LittleFS (1,5 MB). Bridge macht PDF -> Text, Bilder -> JPEG 480x640.

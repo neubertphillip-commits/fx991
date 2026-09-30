@@ -8,14 +8,21 @@ Protokoll (ESP32 -> Bridge):
   Text-Frame  {"t":"prompt","text":"..."}   Frage stellen
   Text-Frame  {"t":"new"}                   neue Sitzung (Kontext vergessen)
   Text-Frame  {"t":"ping"}                  Verbindungstest
+  Text-Frame  {"t":"sync","free":N,"have":[["name",groesse,crc32],...]}
+                                            Datei-Viewer: Abgleich mit dem Ordner --files
   Binaer-Frame  JPEG-Bild; wird mit dem naechsten (oder Default-)Prompt ausgewertet
+  Binaer-Frame  WAV (16 kHz mono); wird per --stt in Text umgewandelt (Spracheingabe)
 
 Protokoll (Bridge -> ESP32), immer Text-Frames:
   {"t":"busy"}                 Anfrage laeuft
   {"t":"line","text":"..."}    eine fertig umgebrochene Displayzeile
   {"t":"done"}                 Antwort komplett
+  {"t":"text","text":"..."}    erkannte Sprache (geht in die Eingabezeile des Rechners)
   {"t":"err","text":"..."}     Fehler
   {"t":"pong"}
+  Abgleich (Antwort auf "sync", danach "line" mit Zusammenfassung und "done"):
+  {"t":"del","text":"name"}              Datei auf dem Rechner loeschen
+  {"t":"file","text":"name","size":N}    Datei folgt als Binaer-Frames (zusammen N Byte)
 """
 
 import argparse
@@ -23,22 +30,49 @@ import asyncio
 import json
 import os
 import re
+import shlex
 import textwrap
 import time
 from pathlib import Path
 
 import websockets
 
+from library import Library
+
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 BASE = Path(os.environ.get("CASIO_HOME", Path.home() / ".casio-deck"))
 SNAP_DIR = BASE / "snaps"
+AUDIO_DIR = BASE / "audio"
 WORKDIR = BASE / "workspace"
+FILES_DIR = BASE / "files"
+
+CHUNK = 8 * 1024  # Binaer-Frames beim Abgleich
+BLOCK = 4096      # Blockgroesse von LittleFS auf dem Rechner
+RESERVE = 32 * 1024  # im Flash frei lassen (LittleFS braucht Luft zum Schreiben)
 
 SYSTEM_HINT = (
     "Du antwortest auf einem sehr kleinen Display ({cols} Zeichen breit). "
     "Antworte knapp, ohne Markdown-Tabellen und ohne Codebloecke, wenn es nicht noetig ist."
 )
 IMAGE_PROMPT = "Beschreibe knapp, was auf dem Bild {path} zu sehen ist."
+STT_TIMEOUT = 120  # Sekunden
+# Markierungen, die whisper.cpp statt Text ausgibt, z.B. [BLANK_AUDIO] oder (Musik)
+STT_NOISE = re.compile(r"\[[^\]]*\]|\([^)]*\)")
+
+
+def is_wav(data: bytes) -> bool:
+    return len(data) > 44 and data[:4] == b"RIFF" and data[8:12] == b"WAVE"
+
+
+def clean_transcript(raw: str) -> str:
+    """Macht aus der Ausgabe des Spracherkenners eine Zeile Text."""
+    text = " ".join(line.strip() for line in ANSI.sub("", raw).splitlines())
+    return re.sub(r"\s+", " ", STT_NOISE.sub(" ", text)).strip()
+
+
+def flash_cost(size: int) -> int:
+    """Platz, den eine Datei im LittleFS des Rechners grob belegt."""
+    return (-(-size // BLOCK) + 1) * BLOCK
 
 
 def wrap(text: str, cols: int) -> list[str]:
@@ -67,6 +101,7 @@ class Bridge:
         self.session_id: str | None = None
         self.pending_image: Path | None = None
         self.lock = asyncio.Lock()
+        self.library = Library(args.files)
 
     async def send(self, ws, **msg):
         await ws.send(json.dumps(msg, ensure_ascii=False))
@@ -134,6 +169,92 @@ class Bridge:
                 await self.send(ws, t="err", text=f"'{self.args.claude}' nicht gefunden")
             await self.send(ws, t="done")
 
+    async def transcribe(self, ws, path: Path):
+        """Wandelt eine Sprachaufnahme mit dem --stt-Befehl in Text um."""
+        async with self.lock:
+            await self.send(ws, t="busy")
+            try:
+                if not self.args.stt:
+                    await self.send(ws, t="err", text="Spracherkennung nicht eingerichtet (--stt)")
+                    return
+                cmd = [os.path.expanduser(a) for a in
+                       shlex.split(self.args.stt.replace("{file}", shlex.quote(str(path))))]
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                try:
+                    out, err = await asyncio.wait_for(proc.communicate(), STT_TIMEOUT)
+                except asyncio.TimeoutError:
+                    proc.kill()
+                    await self.send(ws, t="err", text="Spracherkennung: Zeitueberschreitung")
+                    return
+                text = clean_transcript(out.decode(errors="replace"))
+                if proc.returncode != 0 and not text:
+                    msg = err.decode(errors="replace").strip() or f"exit {proc.returncode}"
+                    await self.send(ws, t="err", text=f"Spracherkennung: {msg}"[-200:])
+                elif not text:
+                    await self.send(ws, t="err", text="nichts verstanden")
+                else:
+                    print(f"erkannt: {text}")
+                    await self.send(ws, t="text", text=text)
+            except FileNotFoundError:
+                await self.send(ws, t="err", text=f"Spracherkennung: '{cmd[0]}' nicht gefunden")
+            except ValueError as e:  # --stt nicht zerlegbar, z.B. offenes Anfuehrungszeichen
+                await self.send(ws, t="err", text=f"Spracherkennung: --stt ungueltig ({e})")
+            finally:
+                await self.send(ws, t="done")
+
+    async def sync(self, ws, data: dict):
+        """Datei-Viewer: Ordner --files mit dem Rechner abgleichen. Geschickt wird nur,
+        was fehlt oder sich geaendert hat (CRC-32), soweit der Platz reicht."""
+        async with self.lock:
+            await self.send(ws, t="busy")
+            try:
+                items, skipped = await asyncio.to_thread(self.library.scan)
+                have: dict[str, tuple[int, int]] = {}
+                for entry in data.get("have", []):
+                    if isinstance(entry, list) and len(entry) == 3:
+                        have[str(entry[0])] = (int(entry[1]), int(entry[2]))
+                free = int(data.get("free", 0))
+                wanted = {it.name for it in items}
+
+                deleted = [name for name in have if name not in wanted]
+                for name in deleted:
+                    await self.send(ws, t="del", text=name)
+                    free += flash_cost(have[name][0])
+
+                todo = [it for it in items if have.get(it.name) != (len(it.data), it.crc)]
+                todo.sort(key=lambda it: (it.image, len(it.data)))  # erst Texte, kleine zuerst
+                sent, no_room = 0, []
+                for it in todo:
+                    old = have.get(it.name)
+                    avail = free + (flash_cost(old[0]) if old else 0)  # alte Version wird ersetzt
+                    need = flash_cost(len(it.data))
+                    if need > avail - RESERVE:
+                        no_room.append(it.name)
+                        continue
+                    free = avail - need
+                    await self.send(ws, t="file", text=it.name, size=len(it.data))
+                    for i in range(0, len(it.data), CHUNK):
+                        await ws.send(it.data[i:i + CHUNK])
+                    sent += 1
+                    print(f"Datei gesendet: {it.name} ({len(it.data)} B)")
+
+                notes = [f"uebersprungen: {s}" for s in skipped] + [f"kein Platz: {n}" for n in no_room]
+                for note in notes:
+                    print(note)
+                    await self.send(ws, t="line", text=note[: self.args.cols])
+                summary = f"{sent} geladen, {len(deleted)} geloescht, {len(items)} Dateien"
+                if no_room:
+                    summary += f", {len(no_room)} ohne Platz"
+                if skipped:
+                    summary += f", {len(skipped)} uebersprungen"
+                print(f"Abgleich: {summary}")
+                await self.send(ws, t="line", text=summary)
+            except (ValueError, TypeError) as e:
+                await self.send(ws, t="err", text=f"Abgleich: ungueltige Anfrage ({e})")
+            finally:
+                await self.send(ws, t="done")
+
     async def handler(self, ws):
         peer = ws.remote_address[0] if ws.remote_address else "?"
         if self.args.allow and peer not in self.args.allow:
@@ -143,6 +264,12 @@ class Bridge:
         print(f"verbunden: {peer}")
         try:
             async for msg in ws:
+                if isinstance(msg, bytes) and is_wav(msg):
+                    path = AUDIO_DIR / f"rec_{int(time.time())}.wav"
+                    path.write_bytes(msg)
+                    print(f"Sprache empfangen: {path} ({len(msg)} B)")
+                    await self.transcribe(ws, path)
+                    continue
                 if isinstance(msg, bytes):
                     path = SNAP_DIR / f"snap_{int(time.time())}.jpg"
                     path.write_bytes(msg)
@@ -163,6 +290,8 @@ class Bridge:
                     await self.send(ws, t="done")
                 elif kind == "ping":
                     await self.send(ws, t="pong")
+                elif kind == "sync":
+                    await self.sync(ws, data)
         except websockets.ConnectionClosed:
             pass
         print(f"getrennt: {peer}")
@@ -177,13 +306,23 @@ async def main():
     ap.add_argument("--model", default=None, help="z.B. claude-sonnet-5 fuer schnellere Antworten")
     ap.add_argument("--allow", nargs="*", default=[], help="erlaubte Client-IPs (leer = alle)")
     ap.add_argument("--auto-image", action="store_true", help="Bild sofort auswerten statt auf Prompt warten")
+    ap.add_argument("--stt", default=os.environ.get("CASIO_STT"),
+                    help="Befehl fuer die Spracherkennung, {file} = WAV-Datei, Text auf stdout "
+                         "(z.B. \"whisper-cli -m ~/models/ggml-base.bin -l de -nt -np -f {file}\")")
+    ap.add_argument("--files", type=Path, default=Path(os.environ.get("CASIO_FILES", FILES_DIR)),
+                    help="Ordner fuer den Datei-Viewer (Texte, PDFs, Bilder), "
+                         "z.B. ~/storage/shared/CasioDeck")
     args = ap.parse_args()
+    args.files = args.files.expanduser()
 
     SNAP_DIR.mkdir(parents=True, exist_ok=True)
+    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
     WORKDIR.mkdir(parents=True, exist_ok=True)
+    args.files.mkdir(parents=True, exist_ok=True)
     bridge = Bridge(args)
     async with websockets.serve(bridge.handler, args.host, args.port, max_size=8 * 1024 * 1024):
         print(f"Bridge laeuft auf ws://{args.host}:{args.port} ({args.cols} Spalten)")
+        print(f"Dateien fuer den Rechner: {args.files}")
         await asyncio.Future()
 
 

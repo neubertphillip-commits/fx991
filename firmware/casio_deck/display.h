@@ -13,4 +13,11 @@ void begin();
 // anderer Screen aktiv geworden ist.
 void render(const Screen& s);
 
+// JPEG ganzflaechig zeigen (Datei-Viewer), bis zum naechsten render(). false, wenn
+// das Backend keine Bilder kann (serieller Monitor, Simulator).
+bool showJpeg(const uint8_t* data, size_t len);
+
+// Anzeige (und spaeter Hintergrundbeleuchtung) aus- bzw. wieder einschalten.
+void power(bool on);
+
 }  // namespace display

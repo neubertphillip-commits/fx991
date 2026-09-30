@@ -21,17 +21,13 @@ constexpr uint8_t IOCON_MIRROR = 0x40;  // INTA meldet Port A und B
 constexpr uint8_t IOCON_ODR = 0x04;     // INT als Open-Drain (Pull-up am ESP32)
 
 constexpr uint16_t ONLY_OUTPUT_PINS = (1u << 7) | (1u << 15);  // GPA7, GPB7
+static_assert(KEY_LINES == 16, "eine Leitung pro MCP-Pin");
+static_assert((KEY_DRIVE_MASK | KEY_SENSE_MASK) == 0xFFFF, "jede Leitung ist Treiber oder Eingang");
+static_assert((KEY_DRIVE_MASK & KEY_SENSE_MASK) == 0, "Leitung ist Treiber und Eingang");
+static_assert((ONLY_OUTPUT_PINS & KEY_SENSE_MASK) == 0, "GPA7/GPB7 koennen nur Treiber sein");
+static_assert(KEY_SENSE_MASK & (1u << KL_A), "A muss Eingang sein");
 
-constexpr uint16_t maskOf(const uint8_t* pins, uint8_t n) {
-  return n == 0 ? 0 : static_cast<uint16_t>((1u << pins[n - 1]) | maskOf(pins, n - 1));
-}
-constexpr uint16_t ROW_MASK = maskOf(KEY_ROW_PINS, KEY_ROWS);
-constexpr uint16_t COL_MASK = maskOf(KEY_COL_PINS, KEY_COLS);
-static_assert(KEY_COLS <= 16, "zu viele Spalten");
-static_assert((ROW_MASK & COL_MASK) == 0, "Pin ist gleichzeitig Zeile und Spalte");
-static_assert((COL_MASK & ONLY_OUTPUT_PINS) == 0, "GPA7/GPB7 koennen nur Zeilen (Ausgaenge) sein");
-
-constexpr uint32_t IDLE_POLL_MS = 50;  // Rueckfallebene, falls INTA nicht verdrahtet ist
+constexpr uint32_t IDLE_POLL_MS = 50;  // Rueckfallebene ohne INTA, und fuer . / x10^x
 constexpr uint8_t QUEUE_LEN = 16;
 
 bool present = false;
@@ -39,9 +35,9 @@ bool scanning = false;
 uint32_t lastScan = 0;
 uint32_t lastIdlePoll = 0;
 
-// Je Zeile ein Bit pro Spalte (Bit c = Spalte c gedrueckt).
-uint16_t stable[KEY_ROWS];
-uint16_t last[KEY_ROWS];
+// Verbindungen: Bit b in x[a] = Leitungen a und b verbunden (symmetrisch gespeichert).
+uint16_t stable[KEY_LINES];
+uint16_t last[KEY_LINES];
 uint8_t sameCount = 0;
 
 KeyEvent queue[QUEUE_LEN];
@@ -74,40 +70,70 @@ bool read16(uint8_t reg, uint16_t& v) {
   return true;
 }
 
-// Spalteneingaenge (low-aktiv) -> Bitmaske nach logischer Spaltennummer.
-uint16_t colBits(uint16_t gpio) {
-  uint16_t bits = 0;
-  for (uint8_t c = 0; c < KEY_COLS; c++) {
-    if (!(gpio & (1u << KEY_COL_PINS[c]))) bits |= 1u << c;
-  }
-  return bits;
+void connect(uint16_t* m, uint8_t a, uint8_t b) {
+  m[a] |= static_cast<uint16_t>(1u << b);
+  m[b] |= static_cast<uint16_t>(1u << a);
 }
 
-// Zeile fuer Zeile auf LOW ziehen, die anderen bleiben HIGH, und Spalten lesen.
-// Die Zeilen sind Push-Pull (GPA7/GPB7 duerfen keine Eingaenge sein). Bei mehreren
-// gedrueckten Tasten in einer Spalte liegen zwei Ausgaenge ueber die Kohlekontakte
-// gegeneinander; deren Widerstand begrenzt den Strom. Notfalls Dioden nachruesten.
-bool scanMatrix(uint16_t* out) {
-  for (uint8_t r = 0; r < KEY_ROWS; r++) {
+// Ein kompletter Scan:
+// 1. Jeder Treiber einzeln LOW, die anderen Treiber HIGH (Push-Pull), die Eingaenge
+//    lesen. Zwischen zwei Treibern liegt keine Taste, es gibt also keinen Kurzschluss.
+// 2. A als Ausgang LOW, alle anderen (ausser GPA7/GPB7) als Eingang mit Pull-up: findet
+//    . (A-N) und x10^x (A-H). Die Treiber sind dabei Eingaenge, weil 0, Ans und EXE A mit
+//    Treibern verbinden und sonst LOW gegen HIGH stuenden.
+bool scanAll(uint16_t* out) {
+  memset(out, 0, sizeof(uint16_t) * KEY_LINES);
+  if (!write16(REG_IODIR, KEY_SENSE_MASK)) return false;
+  for (uint8_t d = 0; d < KEY_LINES; d++) {
+    if (!(KEY_DRIVE_MASK & (1u << d))) continue;
     uint16_t gpio;
-    if (!write16(REG_GPIO, ROW_MASK & ~(1u << KEY_ROW_PINS[r]))) return false;
+    if (!write16(REG_GPIO, static_cast<uint16_t>(KEY_DRIVE_MASK & ~(1u << d)))) return false;
     if (!read16(REG_GPIO, gpio)) return false;
-    out[r] = colBits(gpio);
+    uint16_t low = static_cast<uint16_t>(~gpio & KEY_SENSE_MASK);
+    for (uint8_t j = 0; low; j++, low >>= 1) {
+      if (low & 1) connect(out, d, j);
+    }
   }
-  return true;
+
+  uint16_t gpio;
+  const uint16_t aOut = static_cast<uint16_t>(ONLY_OUTPUT_PINS | (1u << KL_A));
+  bool ok = write16(REG_GPIO, static_cast<uint16_t>(0xFFFF & ~(1u << KL_A))) &&
+            write16(REG_IODIR, static_cast<uint16_t>(~aOut)) && read16(REG_GPIO, gpio);
+  if (ok) {
+    uint16_t low = static_cast<uint16_t>(~gpio & ~aOut);
+    for (uint8_t j = 0; low; j++, low >>= 1) {
+      if (low & 1) connect(out, KL_A, j);
+    }
+  }
+  return write16(REG_IODIR, KEY_SENSE_MASK) && ok;
 }
 
-// Alle Zeilen LOW: jede Taste zieht dann ihre Spalte runter und loest INTA aus.
+// Ruhezustand: alle Treiber LOW; jede Taste zwischen Treiber und Eingang zieht den
+// Eingang runter und loest INTA aus.
 void enterIdle() {
   scanning = false;
   uint16_t dummy;
   write16(REG_GPIO, 0);
+  write16(REG_IODIR, KEY_SENSE_MASK);
   read16(REG_GPIO, dummy);  // Lesen von GPIO quittiert den Interrupt
 }
 
-void push(uint8_t row, uint8_t col, bool pressed) {
+// Im Ruhezustand nachsehen, ob eine Taste gedrueckt ist, auch . und x10^x (A treiben).
+bool idleCheck() {
+  uint16_t gpio;
+  if (!read16(REG_GPIO, gpio)) return false;
+  if ((gpio & KEY_SENSE_MASK) != KEY_SENSE_MASK) return true;
+  const uint16_t nh = (1u << KL_N) | (1u << KL_H);
+  bool pressed = write16(REG_IODIR, static_cast<uint16_t>(KEY_SENSE_MASK & ~(1u << KL_A))) &&
+                 read16(REG_GPIO, gpio) && (gpio & nh) != nh;
+  write16(REG_IODIR, KEY_SENSE_MASK);
+  read16(REG_GPIO, gpio);  // A wieder Eingang: den dadurch ausgeloesten Interrupt quittieren
+  return pressed;
+}
+
+void push(uint8_t a, uint8_t b, bool pressed) {
   if (qCount == QUEUE_LEN) return;  // voll: Ereignis verwerfen
-  queue[(qHead + qCount) % QUEUE_LEN] = {row, col, pressed};
+  queue[(qHead + qCount) % QUEUE_LEN] = {a, b, pressed};
   qCount++;
 }
 
@@ -117,8 +143,7 @@ void service() {
     bool wake = digitalRead(PIN_MCP_INT) == LOW;
     if (!wake && now - lastIdlePoll >= IDLE_POLL_MS) {
       lastIdlePoll = now;
-      uint16_t gpio;
-      wake = read16(REG_GPIO, gpio) && (gpio & COL_MASK) != COL_MASK;
+      wake = idleCheck();
     }
     if (!wake) return;
     scanning = true;
@@ -128,8 +153,8 @@ void service() {
   if (now - lastScan < KEY_SCAN_MS) return;
   lastScan = now;
 
-  uint16_t cur[KEY_ROWS];
-  if (!scanMatrix(cur)) return;  // I2C-Fehler: beim naechsten Intervall erneut
+  uint16_t cur[KEY_LINES];
+  if (!scanAll(cur)) return;  // I2C-Fehler: beim naechsten Intervall erneut
 
   if (memcmp(cur, last, sizeof(cur)) == 0) {
     if (sameCount < 255) sameCount++;
@@ -140,13 +165,13 @@ void service() {
   if (sameCount < KEY_DEBOUNCE_SCANS) return;
 
   bool any = false;
-  for (uint8_t r = 0; r < KEY_ROWS; r++) {
-    uint16_t diff = stable[r] ^ cur[r];
-    for (uint8_t c = 0; diff && c < KEY_COLS; c++) {
-      if (diff & (1u << c)) push(r, c, cur[r] & (1u << c));
+  for (uint8_t a = 0; a < KEY_LINES; a++) {
+    uint16_t diff = static_cast<uint16_t>(stable[a] ^ cur[a]);
+    for (uint8_t b = a + 1; b < KEY_LINES; b++) {
+      if (diff & (1u << b)) push(a, b, cur[a] & (1u << b));
     }
-    stable[r] = cur[r];
-    any |= cur[r] != 0;
+    stable[a] = cur[a];
+    any |= cur[a] != 0;
   }
   if (!any) enterIdle();
 }
@@ -164,14 +189,12 @@ bool begin() {
   present = Wire.endTransmission() == 0;
   if (!present) return false;
 
-  // GPA7/GPB7 immer als Ausgang, auch wenn sie (noch) keine Zeile sind.
-  const uint16_t outputs = ROW_MASK | ONLY_OUTPUT_PINS;
   write8(REG_IOCON, IOCON_MIRROR | IOCON_ODR);
-  write16(REG_GPIO, ROW_MASK);  // Zeilen erst HIGH setzen, dann auf Ausgang schalten
-  write16(REG_IODIR, static_cast<uint16_t>(~outputs));
-  write16(REG_GPPU, static_cast<uint16_t>(~outputs));  // Spalten + unbenutzte Eingaenge
+  write16(REG_GPIO, 0);  // Treiber erst LOW setzen, dann auf Ausgang schalten
+  write16(REG_IODIR, KEY_SENSE_MASK);
+  write16(REG_GPPU, static_cast<uint16_t>(~ONLY_OUTPUT_PINS));  // Pull-ups ueberall, wo moeglich
   write16(REG_INTCON, 0);  // Interrupt bei jeder Aenderung
-  write16(REG_GPINTEN, COL_MASK);
+  write16(REG_GPINTEN, KEY_SENSE_MASK);
 
   memset(stable, 0, sizeof(stable));
   memset(last, 0, sizeof(last));
@@ -189,5 +212,12 @@ bool poll(KeyEvent& ev) {
 }
 
 bool active() { return scanning; }
+
+bool armWake() {
+  if (!present) return false;
+  enterIdle();
+  uint16_t gpio;
+  return read16(REG_GPIO, gpio) && (gpio & KEY_SENSE_MASK) == KEY_SENSE_MASK;
+}
 
 }  // namespace keypad

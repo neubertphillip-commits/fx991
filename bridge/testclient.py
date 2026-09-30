@@ -4,6 +4,7 @@
   python testclient.py ws://192.168.x.x:8765
   Eingabe  /new        neue Sitzung
   Eingabe  /img datei  JPEG schicken, danach Frage eintippen
+  Eingabe  /wav datei  WAV (16 kHz mono) schicken, zeigt den erkannten Text
 """
 
 import asyncio
@@ -28,12 +29,17 @@ async def main(url):
                     await ws.send(f.read())
                 print("(Bild gesendet, jetzt Frage eingeben)")
                 continue
+            elif text.startswith("/wav "):
+                with open(text[5:].strip(), "rb") as f:
+                    await ws.send(f.read())
             else:
                 await ws.send(json.dumps({"t": "prompt", "text": text}))
             while True:
                 msg = json.loads(await ws.recv())
                 if msg["t"] == "line":
                     print("|", msg["text"])
+                elif msg["t"] == "text":
+                    print("erkannt:", msg["text"])
                 elif msg["t"] == "err":
                     print("! ", msg["text"])
                 elif msg["t"] == "done":

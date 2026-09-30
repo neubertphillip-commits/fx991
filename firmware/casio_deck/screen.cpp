@@ -113,6 +113,12 @@ void Screen::inputClear() {
   version_++;
 }
 
+void Screen::setInputMarked(bool on) {
+  if (on == marked_) return;
+  marked_ = on;
+  version_++;
+}
+
 const char* Screen::lineAt(uint32_t n) const {
   if (n >= total_ || total_ - n > SCROLLBACK) return nullptr;
   return lines_[n % SCROLLBACK];

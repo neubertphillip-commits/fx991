@@ -27,6 +27,27 @@ WebSocket-Server auf dem Handy (Termux). Nimmt Prompts/Bilder vom ESP32 an, frag
    python bridge.py --cols 60
    ```
 
+## Handy-Display aus
+
+Die Bridge muss auch mit ausgeschaltetem Display und in der Hosentasche erreichbar
+bleiben. Android legt Hintergrund-Apps gern schlafen; einmal einstellen:
+
+1. **`termux-wake-lock`** vor dem Start (siehe oben). Termux zeigt dann eine dauerhafte
+   Benachrichtigung und die CPU schlaeft nicht ganz ein. Kostet etwas Handy-Akku.
+2. **Akku-Optimierung fuer Termux aus:** Einstellungen -> Apps -> Termux -> Akku ->
+   "Nicht eingeschraenkt"/"Nicht optimieren". Bei Samsung zusaetzlich Termux aus den
+   "Schlafenden Apps" nehmen, bei Xiaomi "Autostart" erlauben
+   (Hersteller-Tipps: https://dontkillmyapp.com).
+3. **Hotspot nicht automatisch abschalten:** Der Rechner verbindet sich nur bei Bedarf,
+   dazwischen ist kein Geraet im Hotspot. Viele Handys schalten ihn dann nach 5-10 min
+   ab. In den Hotspot-Einstellungen "Automatisch ausschalten" bzw. "Hotspot automatisch
+   deaktivieren" ausschalten.
+4. **Datensparmodus:** Termux "uneingeschraenkte Datennutzung" erlauben, sonst kommt
+   `claude` im Hintergrund nicht ins Internet.
+
+Die Adresse der Bridge findet der Rechner selbst (Gateway des Hotspots), auch wenn
+Android das Hotspot-Netz bei jedem Einschalten neu waehlt.
+
 ## Testen ohne Taschenrechner
 
 IP des Handys im Hotspot herausfinden (`ifconfig` in Termux), dann vom Laptop:
@@ -37,6 +58,9 @@ python testclient.py ws://<handy-ip>:8765
 
 Eingaben: normaler Text = Frage, `/new` = neue Sitzung, `/img foto.jpg` = Bild schicken.
 
+Oder mit dem PC-Simulator der Firmware, der sich wie der Taschenrechner bedient
+(siehe `firmware/README.md`): `firmware/sim/casio-sim --host <handy-ip>`.
+
 ## Optionen
 
 | Flag | Bedeutung |
@@ -45,8 +69,66 @@ Eingaben: normaler Text = Frage, `/new` = neue Sitzung, `/img foto.jpg` = Bild s
 | `--model claude-sonnet-5` | schnelleres/guenstigeres Modell |
 | `--allow 192.168.x.y` | nur diese Client-IP zulassen |
 | `--auto-image` | Bild sofort auswerten, ohne auf eine Frage zu warten |
+| `--stt "BEFEHL {file}"` | Spracherkennung fuer die Spracheingabe (siehe unten), auch per `CASIO_STT` |
+| `--files ORDNER` | Ordner fuer den Datei-Viewer (Standard `~/.casio-deck/files`), auch per `CASIO_FILES` |
+
+## Dateien fuer den Viewer
+
+Was im Ordner `--files` liegt, holt sich der Rechner im Modus DATEIEN mit
+`[Mit Handy abgleichen]`. Am bequemsten ist ein Ordner im normalen Handyspeicher,
+dann lassen sich Dateien mit jedem Dateimanager oder per "Teilen" hineinlegen:
+
+```sh
+termux-setup-storage                      # einmal: Zugriff auf den Handyspeicher erlauben
+mkdir -p ~/storage/shared/CasioDeck
+python bridge.py --files ~/storage/shared/CasioDeck
+```
+
+Aufbereitet wird automatisch: Text wird UTF-8, PDFs werden Text, Bilder werden auf
+480x640 verkleinert. Dafuer (optional):
+
+```sh
+pkg install poppler            # pdftotext fuer PDFs
+pip install pillow             # Bilder verkleinern (ohne: nur kleine JPEGs unveraendert)
+```
+
+Unterordner und andere Dateitypen werden uebersprungen; die Bridge meldet sie beim Abgleich.
+Tests: `python3 -m unittest test_library`.
+
+## Spracheingabe (optional)
+
+Claude nimmt ueber `claude -p` kein Audio an. Der Rechner schickt deshalb seine
+Aufnahme als WAV (16 kHz, mono) an die Bridge, die sie mit einem beliebigen Programm
+in Text umwandelt und zurueckschickt (`{"t":"text"}`); der Text landet in der
+Eingabezeile des Rechners. Ohne `--stt` meldet die Bridge nur einen Fehler, alles
+andere laeuft normal.
+
+Empfohlen: [whisper.cpp](https://github.com/ggml-org/whisper.cpp), laeuft offline auf
+dem Handy. In Termux (ungetestet, braucht ein paar Minuten zum Bauen):
+
+```sh
+pkg install git cmake clang
+git clone --depth 1 https://github.com/ggml-org/whisper.cpp ~/whisper.cpp
+cd ~/whisper.cpp && cmake -B build && cmake --build build -j4 --config Release
+sh ./models/download-ggml-model.sh base      # ~150 MB; "small" ist genauer, aber langsamer
+```
+
+Dann die Bridge so starten:
+
+```sh
+python bridge.py --stt "~/whisper.cpp/build/bin/whisper-cli -m ~/whisper.cpp/models/ggml-base.bin -l de -nt -np -f {file}"
+```
+
+`{file}` wird durch den Pfad der Aufnahme ersetzt; alles, was der Befehl auf stdout
+ausgibt, ist der erkannte Text (Markierungen wie `[BLANK_AUDIO]` werden entfernt).
+Testen ohne Rechner: `python testclient.py` und `/wav aufnahme.wav`.
 
 ## Protokoll
 
 Siehe Docstring in `bridge.py`. Kurz: ESP32 schickt `{"t":"prompt","text":"..."}` oder
 ein JPEG als Binaer-Frame, Bridge antwortet mit `busy`, beliebig vielen `line` und `done`.
+Ein WAV als Binaer-Frame (erkannt an `RIFF....WAVE`) beantwortet sie mit `busy`,
+`text` (erkannte Sprache) und `done`.
+Der Datei-Abgleich (`{"t":"sync"}`) wird mit `del` (Datei loeschen), `file` (Name,
+Groesse) plus Binaer-Frames mit dem Inhalt, einer Zusammenfassung als `line` und `done`
+beantwortet.

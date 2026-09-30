@@ -209,6 +209,22 @@ static void testWav() {
   int16_t loud[2] = {20000, -20000};
   wavAmplify(loud, 2, 4);
   CHECK(loud[0] == 32767 && loud[1] == -32768);
+
+  // Hochpass: driftender Gleichanteil verschwindet, 1 kHz bleibt
+  static int16_t hp[16000];
+  for (int i = 0; i < 16000; i++) {
+    double drift = 6000.0 - 3000.0 * i / 16000;
+    hp[i] = static_cast<int16_t>(drift + 1000.0 * sin(2 * 3.14159265 * 1000.0 * i / 16000));
+  }
+  wavHighpass(hp, 16000, 16000);
+  double mean = 0, peak = 0;
+  for (int i = 8000; i < 16000; i++) {
+    mean += hp[i];
+    if (fabs(hp[i]) > peak) peak = fabs(hp[i]);
+  }
+  mean /= 8000;
+  CHECK(fabs(mean) < 50);
+  CHECK(peak > 900 && peak < 1100);
 }
 
 static void testCrc32() {

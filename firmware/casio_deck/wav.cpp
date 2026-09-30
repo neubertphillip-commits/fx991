@@ -26,6 +26,22 @@ void wavHeader(uint8_t* out, uint32_t dataBytes, uint32_t sampleRate) {
   put32(out + 40, dataBytes);
 }
 
+void wavHighpass(int16_t* samples, size_t count, uint32_t sampleRate) {
+  if (count == 0 || sampleRate == 0) return;
+  const float a = 1.0f - 2.0f * 3.14159265f * 20.0f / static_cast<float>(sampleRate);
+  float prevIn = samples[0];
+  float prevOut = 0.0f;
+  for (size_t i = 0; i < count; i++) {
+    float in = samples[i];
+    prevOut = a * (prevOut + in - prevIn);
+    prevIn = in;
+    float v = prevOut;
+    if (v > 32767.0f) v = 32767.0f;
+    if (v < -32768.0f) v = -32768.0f;
+    samples[i] = static_cast<int16_t>(v);
+  }
+}
+
 void wavAmplify(int16_t* samples, size_t count, int gain) {
   if (count == 0) return;
   int64_t sum = 0;

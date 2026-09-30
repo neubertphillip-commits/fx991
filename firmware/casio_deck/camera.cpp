@@ -70,6 +70,12 @@ bool begin() {
     // Das Modul sitzt auf der Sense-Platine gedreht; bei Bedarf hier anpassen.
     s->set_vflip(s, CAM_VFLIP);
     s->set_hmirror(s, CAM_HMIRROR);
+    s->set_whitebal(s, 1);
+    s->set_awb_gain(s, 1);
+    if (s->id.PID == OV3660_PID) {  // wie im CameraWebServer-Beispiel von Espressif
+      s->set_brightness(s, 1);
+      s->set_saturation(s, -2);
+    }
   }
   on = true;
   Serial.println("[cam] an");
@@ -89,6 +95,12 @@ bool isOn() { return on; }
 bool capture(const uint8_t*& jpeg, size_t& len) {
   if (!on && !begin()) return false;
   release();
+  // Weissabgleich und Belichtung regeln nur, solange Bilder abgeholt werden: vor jedem
+  // Foto eine Weile Bilder verwerfen (sonst gruenstichig).
+  uint32_t warmupStart = millis();
+  while (millis() - warmupStart < CAM_WARMUP_MS) {
+    if (camera_fb_t* f = esp_camera_fb_get()) esp_camera_fb_return(f);
+  }
   frame = esp_camera_fb_get();
   if (!frame) {
     lastError = "Aufnahme fehlgeschlagen";

@@ -116,6 +116,7 @@ constexpr uint32_t IDLE_NAP_MAX_MS = 1000;    // laengstens am Stueck (fuer Auto
 #define CAM_JPEG_QUALITY 12  // 0-63, kleiner = besser/groesser
 #define CAM_VFLIP 1
 #define CAM_HMIRROR 0
+#define CAM_WARMUP_MS 1500  // so lange vor jedem Foto Bilder verwerfen (Weissabgleich)
 
 // ---------------------------------------------------------------------------
 // Mikrofon (PDM auf der Sense-Platine, interne Pins) und Spracheingabe
@@ -125,6 +126,7 @@ constexpr int PIN_MIC_DATA = 41;
 constexpr uint32_t MIC_SAMPLE_RATE = 16000;  // passt direkt zu whisper.cpp
 constexpr uint32_t MIC_MAX_SECONDS = 30;     // ~1 MB PSRAM
 constexpr int MIC_GAIN = 4;                  // Software-Verstaerkung, PDM ist leise
+constexpr uint32_t MIC_SETTLE_MS = 250;      // Einschwingen des PDM-Filters verwerfen
 // true: erkannten Text sofort an Claude schicken, statt ihn zum Korrigieren
 // in die Eingabezeile zu schreiben.
 constexpr bool VOICE_AUTO_SEND = false;

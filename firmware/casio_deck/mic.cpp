@@ -21,6 +21,10 @@ const char* lastError = "";
 // Liest in einem eigenen Task, damit keine Samples verloren gehen, waehrend
 // loop() mit WLAN oder Tastatur beschaeftigt ist.
 void recordTask(void*) {
+  // Das PDM-Filter schwingt nach dem Einschalten ein (Knacken, starker Gleichanteil):
+  // die ersten Samples lesen und verwerfen.
+  char scratch[512];
+  while (!stopRequest && millis() - startedAt < MIC_SETTLE_MS) i2s.readBytes(scratch, sizeof(scratch));
   while (!stopRequest && pcmBytes < capacity) {
     size_t chunk = capacity - pcmBytes;
     if (chunk > 1024) chunk = 1024;
@@ -47,7 +51,9 @@ void finish(bool keep) {
     freeBuffer();
     return;
   }
-  wavAmplify(reinterpret_cast<int16_t*>(buffer + WAV_HEADER_BYTES), pcmBytes / 2, MIC_GAIN);
+  int16_t* pcm = reinterpret_cast<int16_t*>(buffer + WAV_HEADER_BYTES);
+  wavHighpass(pcm, pcmBytes / 2, MIC_SAMPLE_RATE);
+  wavAmplify(pcm, pcmBytes / 2, MIC_GAIN);
   wavHeader(buffer, pcmBytes, MIC_SAMPLE_RATE);
   ready = true;
 }

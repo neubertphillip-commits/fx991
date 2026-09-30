@@ -139,6 +139,37 @@ void begin(MessageHandler h, BinaryHandler b) {
   binaryHandler = b;
   WiFi.persistent(false);  // Zugangsdaten nicht bei jedem begin() ins Flash schreiben
   WiFi.mode(WIFI_OFF);
+#ifdef ESP_PLATFORM
+  // Diagnose: warum die Anmeldung scheitert, und welche IP der Rechner bekommt
+  WiFi.onEvent([](arduino_event_id_t event, arduino_event_info_t info) {
+    if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) {
+      uint8_t r = info.wifi_sta_disconnected.reason;
+      Serial.printf("[net] WLAN getrennt: %u %s\n", r,
+                    WiFi.disconnectReasonName(static_cast<wifi_err_reason_t>(r)));
+    } else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) {
+      Serial.printf("[net] WLAN verbunden: %s, %d dBm\n",
+                    WiFi.localIP().toString().c_str(), WiFi.RSSI());
+    }
+  });
+#endif
+}
+
+void scan() {
+#ifdef ESP_PLATFORM
+  bool wasOff = WiFi.getMode() == WIFI_OFF;
+  if (wasOff) WiFi.mode(WIFI_STA);
+  int n = WiFi.scanNetworks(false, true);
+  Serial.printf("[net] %d Netze gefunden\n", n);
+  for (int i = 0; i < n; i++) {
+    Serial.printf("  %s '%s' %d dBm Kanal %d Verschl. %d\n",
+                  WiFi.SSID(i) == WIFI_SSID ? "*" : " ", WiFi.SSID(i).c_str(),
+                  WiFi.RSSI(i), WiFi.channel(i), WiFi.encryptionType(i));
+  }
+  WiFi.scanDelete();
+  if (wasOff && !wantOn) WiFi.mode(WIFI_OFF);
+#else
+  Serial.println("[net] Scan nur auf dem ESP32");
+#endif
 }
 
 void enable(bool on) {

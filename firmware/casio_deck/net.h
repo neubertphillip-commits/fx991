@@ -31,6 +31,9 @@ void loop();
 void enable(bool on);
 bool enabled();
 
+// WLAN-Netze in Reichweite seriell ausgeben (Diagnose, * = eigenes Netz).
+void scan();
+
 // Sparsamer Wartemodus des Funkmoduls erlaubt (nur waehrend auf Claude gewartet wird,
 // nicht bei OTA-Updates, die sonst sehr langsam wuerden).
 void allowLowPower(bool allowed);

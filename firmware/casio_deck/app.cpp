@@ -851,6 +851,8 @@ void serialCommand(const char* cmd) {
     Serial.printf("[app] Tastenprotokoll %s\n", logKeys ? "an" : "aus");
   } else if (!strcmp(cmd, "wifi") || !strcmp(cmd, "ota")) {
     stayOnline();
+  } else if (!strcmp(cmd, "scan")) {
+    net::scan();
   } else if (!strcmp(cmd, "new")) {
     onKey(K_AC);
   } else if (!strcmp(cmd, "ping")) {
@@ -871,7 +873,7 @@ void serialCommand(const char* cmd) {
     Serial.println("Befehle: :calc :term :cam :files  :keys (Tastenprotokoll)  :ota (WLAN 5 min an)");
     Serial.println("         :new (neue Claude-Sitzung)  :ping  :key NAME (Taste druecken)");
     Serial.println("         :rec (Spracheingabe starten/abschicken)  :sync (Dateien abgleichen)");
-    Serial.println("         :off (ausschalten)");
+    Serial.println("         :scan (WLAN-Netze anzeigen)  :off (ausschalten)");
     Serial.println("Jede andere Zeile wird im aktuellen Modus eingegeben und abgeschickt.");
   }
 }

@@ -99,7 +99,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 5. ~~Spracheingabe~~ geschrieben (Simulator + Bridge getestet, whisper.cpp in Termux und Mikro ungetestet).
 6. Einbau ohne Loecher: OTA, Watchdog, Tiefschlaf sind geschrieben (kompiliert, Simulator getestet).
    Innentiefe ca. 8-10 mm (gemessen); oben Panel 2,2 + LT7680-Board 4,5 = 6,7 mm -> XIAO passt dort
-   nicht dahinter. Offen: Tiefe hinter der Tastaturplatine (Rueckseite Platine bis Rueckdeckel), (Hoehe XIAO+Sense ~15 mm!), Platz fuer Qi-Spule + Akku an der
+   nicht dahinter. Hinter der Tastaturplatine ca. 4 mm (gemessen, Rueckseite Platine bis Gehaeuserand;
+   Tiefe der Rueckdeckel-Wanne offen): MCP 1,75, Akku 3, XIAO allein ~3,5 mm passen, XIAO+Sense nicht (~15 mm mit Kamera), Platz fuer Qi-Spule + Akku an der
    Rueckwand, Abstand Spule-Mappe (< ~5 mm), Ruhestrom im Tiefschlaf und des Qi-Senders messen.
 7. Eigene Tastaturplatine statt Anzapfen (Ringe der Casio-Platine nehmen kein Zinn): gleicher Umriss,
    ENIG-Kontakte fuer die Matte, MCP23017 bestueckt, echte Matrix. `hardware/pcb/`: Geometrie aus Fotos

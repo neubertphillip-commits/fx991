@@ -111,6 +111,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
    Fertigungsdaten fuer JLCPCB in fertigung/. Entscheidung: Version 1 zuerst mit der Casio-Platine und
    Silber-Leitkleber (Firmware bleibt bei den 16 Casio-Leitungen), eigene Platine erst danach bestellen.
    Idee fuer Version 2: Platine uebernimmt die Sense-Platine (XIAO flach per B2B-Stecker, Kamera-FPC, PDM-Mikro).
+   B2B ist Hirose DF40 (30 pol., min. 1,5 mm Stapelhoehe), Belegung und Kamera-LDOs in hardware/pcb/README.md.
+   Hoehe dann ~5 mm hinter der Platine: passt nur mit ~1 mm aus der Rueckdeckel-Wanne (messen).
 8. Spaeter, wenn Hardware und Firmware laufen: eine eigene Android-App (.apk) statt Termux,
    fuer alles, nicht eine APK pro Aufgabe. Bis dahin Termux-Bridge.
    - Aufbau: Kern (Hintergrunddienst, Anmeldung, ein gesicherter Kanal) + Module, per

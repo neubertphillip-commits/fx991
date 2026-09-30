@@ -85,9 +85,54 @@ Dazu 3V3/GND. Fuer unsere Platine waeren noetig: B2B-Gegenstecker, 24-pol. 0,5-m
 die OV3660, PDM-Mikrofon, Entkopplung. Footprint fuer den XIAO (SMD): Seeed-Bibliothek
 `XIAO-ESP32-S3-SMD.kicad_mod` (oshw-xiao-series).
 
+### Aus Seeeds Sense-Platine (Eagle-Dateien, geprueft 30.09.2026)
+
+Quelle: `XIAO_ESP32S3_ExpBoard_v1.0_SCH&PCB_230324.zip` von
+files.seeedstudio.com/wiki/SeeedStudio-XIAO-ESP32S3/res/ (lokal geladen, in der Cloud gesperrt).
+
+Bauteile:
+
+| Ref | Teil | Zweck |
+|---|---|---|
+| JA3 | Hirose DF40HC(3.0)-30DS-0.4V(51), 30 pol., 0,4 mm, 8,6 x 3,38 mm | B2B zum XIAO (Buchse, Stapelhoehe 3,0 mm) |
+| JA1 | AFC01-S24FCC-00, 24 pol., 0,5 mm | FPC-Buchse OV3660 |
+| MIC1 | MSM261D3526H1CPM (3,5 x 2,65 x 0,94 mm) | PDM-Mikro, Daten/Takt ueber Loetbruecken JP1/JP2 |
+| U1 / U2 | SGM2036 (X2SON-4), Netze VCC_2V8 / VCC_1V8 | Kamera-LDOs, 2,8 V (AVDD ueber FB2) und 1,8 V (DOVDD) |
+| JA2 | microSD-Halter | brauchen wir nicht |
+
+Die LDOs haengen ueber R14 (0 Ohm) an VIN; R15 (nicht bestueckt) waere die Einspeisung aus 3V3.
+Das Bauteil U2 heisst laut Wert `SGM2036S-1.3`, das Netz aber VCC_1V8: vor dem Nachbau im
+Schaltplan-PDF klaeren. Kamera-FPC: Pin 6 = RESET (10 kOhm an 3V3 + 100 nF), Pin 8 ueber R10
+(10 kOhm, vermutlich PWDN nach GND), Pin 24 ueber Diode D6 (MSK4005) mit C14/C15.
+
+B2B-Belegung (JA3, Pads 1-15 eine Reihe, 16-30 gegenueber, 0,4 mm Raster):
+
+| Pin | Netz | Pin | Netz |
+|---|---|---|---|
+| 1 | VIN | 16 | VIN |
+| 2, 3 | GND | 17 | IO18 Y4 |
+| 4 | IO42 PDM_CLK | 18 | IO17 Y3 |
+| 5 | IO41 PDM_DATA | 19 | IO16 Y5 |
+| 6 | IO40 CAM_SDA | 20 | IO15 Y2 |
+| 7 | IO39 CAM_SCL | 21 | IO14 Y6 |
+| 8 | IO38 VSYNC | 22 | IO13 PCLK |
+| 9 | IO47 HREF | 23 | IO12 Y7 |
+| 10 | IO48 Y9 | 24 | IO11 Y8 |
+| 11 | (frei) | 25 | IO10 XMCLK |
+| 12, 13 | 3V3 | 26 / 27 / 28 | D10 MOSI / D9 MISO / D8 SCK |
+| 14 | GND | 29 | D2 SD_CS |
+| 15 | IO21 USER_LED | 30 | GND |
+
+Lage: Die Sense-Platine ist 17,78 x 15,37 mm, also so breit wie der XIAO. JA3 sitzt auf ihrer
+Unterseite (gespiegelt), Mitte 11,05 mm vom linken und 2,31 mm vom unteren Rand in Seeeds
+Draufsicht. Seeeds KiCad-Footprint `XIAO-ESP32-S3-SMD.kicad_mod` enthaelt den B2B nicht (nur Rand-
+und Unterseitenpads), die Lage muss daher am echten XIAO nachgemessen werden (Messschieber, Foto).
+
 Offen / Risiken:
-- Genaues B2B-Stecker-Teil und seine Lage unter dem XIAO stehen nur in Seeeds
-  `XIAO_ESP32S3_ExpBoard_v1.0_SCH&PCB_230324.zip` (files.seeedstudio.com, hier gesperrt).
-- Hoehe: Der XIAO sitzt dann auf dem gesteckten B2B (~0,6-1 mm) statt flach, also ~4,3-4,5 mm
-  gesamt; hinter der Platine sind ~4 mm plus Rueckdeckel-Wanne (noch messen).
-- Die Kantenpads des XIAO (I2C, SPI, Strom) muessen den Spalt zur Platine ueberbruecken.
+- Hoehe: DF40 hat keine 0,6-1 mm Stapelhoehe. Seeed nutzt 3,0 mm; die flachste DF40-Buchse
+  (DF40C-30DS-0.4V, Gegenstueck zum Stecker am XIAO) ergibt 1,5 mm. Mit XIAO ~3,5 mm also
+  ~5 mm ueber unserer Platine, verfuegbar ~4 mm plus Rueckdeckel-Wanne (noch messen). So wie
+  gedacht passt Variante C nur, wenn die Wanne mindestens ~1 mm bringt.
+- Die Kantenpads des XIAO (I2C, SPI, Strom) muessen den Spalt von 1,5 mm zur Platine ueberbruecken
+  (kurze Drahtbruecken oder Stiftleiste 1,5 mm).
+- Zusaetzlich zu B2B, FPC und Mikro braucht die Platine die beiden Kamera-LDOs mit Beschaltung.

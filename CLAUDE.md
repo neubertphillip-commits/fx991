@@ -10,7 +10,7 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
 ## Hardware (bestellt 25.09.2026)
 
 - Seeed XIAO ESP32S3 Sense (OV3660-Kamera, abnehmbare Sense-Platine, LiPo-Lader onboard, 11 GPIO an der Kante)
-- BuyDisplay 2,4" Bar-Type IPS 480x640 (ER-TFT024-5: aussen 42,62 x 58,50 x 2,2 mm, aktiv 36,72 x 48,96 mm, hochkant), SPI+RGB, 40-Pin-ZIF, mit LT7680-Controllerboard (SPI -> RGB, RA8876-aehnlicher Befehlssatz; LovyanGFX unterstuetzt ihn vermutlich nicht direkt, BuyDisplay-Beispielcode als Basis)
+- BuyDisplay 2,4" Bar-Type IPS 480x640 (ER-TFT024-5: aussen 42,62 x 58,50 x 2,2 mm, aktiv 36,72 x 48,96 mm, hochkant), SPI+RGB, 40-Pin-ZIF, mit LT7680-Controllerboard (48,2 x 32 mm +-0,3; SPI -> RGB, eigener Bildspeicher, RA8876-aehnlicher Befehlssatz; LovyanGFX unterstuetzt ihn vermutlich nicht direkt, BuyDisplay-Beispielcode als Basis)
 - LiPo 3,7 V 300 mAh, 40x30x3 mm, an BAT-Pads des XIAO
 - Kupferlackdraht 0,1 mm zum Anzapfen der Tastaturpads
 

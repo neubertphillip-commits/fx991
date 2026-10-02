@@ -189,3 +189,15 @@ Jede Taste hat genau zwei Flaechen, die Mengen passen exakt zur Tabelle oben.
 | X6 | GPB7 | 8 | 8, 11, 12 | 6 (S: 6, 9, 10) |
 
 Vor dem Loeten je Punkt einmal mit dem Durchgangspruefer gegen eine der genannten Tasten bestaetigen.
+
+## Metallpunkte auf der Rueckseite (Alternative zum Kleben)
+
+Karte `metallpunkte.jpg`: blanke, kupfer-/braunfarbene Punkte M1-M27 auf den Bahnen der Rueckseite
+(per Farbe gefunden; die dunklen tropfenfoermigen Flecken sind nicht markiert, evtl. auch Metall).
+Keine Tastenleitung: M1/M2 (LCD-Anschluss), M6 (Batteriepad), M17-M19 (Kondensator C105).
+Punkte innerhalb des weissen Rings um den Chip-Klecks sind seit dem Durchritzen abgetrennt.
+Zuordnung zu den Leitungen messen (Referenztasten wie oben) und hier eintragen:
+
+| Leitung | Metallpunkt |
+|---|---|
+| C, N, H, M, L, K, A, ON, Q, X5, X4, X3, G, F, B, X6 | |

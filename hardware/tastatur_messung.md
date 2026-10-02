@@ -209,5 +209,5 @@ Zuordnung zu den Leitungen messen (Referenztasten wie oben) und hier eintragen:
 |---|---|
 | X3, X4, K, A | geklebt (Leitkleber, Aushaerten im Ofen ~140 C ausstehend) |
 | B | geloetet an M28 (dunkler Tropfen rechts unterhalb der Mitte, `metallpunkte.jpg`) |
-| H, F | angeschlossen (03.10.2026) |
-| C, N, M, L, ON, Q, X5, G, X6 | offen |
+| H, F, N | angeschlossen (03.10.2026) |
+| C, M, L, ON, Q, X5, G, X6 | offen |

@@ -303,8 +303,8 @@ keinen Kurzschluss; `hosttest` prueft das fuer die ganze Tabelle. . und x10^x lo
 Ruhezustand keinen Interrupt aus: Sie wecken nicht aus dem Tiefschlaf und werden im
 Leichtschlaf erst beim naechsten Timer-Wecken (<= 1 s) erkannt.
 
-Die Tasten 1-4 und 9-30 sind in `keymap.cpp` noch nicht zugeordnet. Beim Druecken meldet
-der serielle Monitor
+Unbelegt sind noch OPTN, CALC, ∫, x, Bruch, °'", STO, ENG, S⇔D und M+ (Kontakte 9-13, 20,
+25, 26, 29, 30). Beim Druecken meldet der serielle Monitor
 
 ```
 [key] gedrueckt   Kontakt 17, Leitungen L-X5 (GPA4/GPB1) -> unbelegt

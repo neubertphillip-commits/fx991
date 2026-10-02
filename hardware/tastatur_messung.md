@@ -201,3 +201,11 @@ Zuordnung zu den Leitungen messen (Referenztasten wie oben) und hier eintragen:
 | Leitung | Metallpunkt |
 |---|---|
 | C, N, H, M, L, K, A, ON, Q, X5, X4, X3, G, F, B, X6 | |
+
+## Stand Verdrahtung (02.10.2026)
+
+| Leitung | Stand |
+|---|---|
+| X3, X4, K, A | geklebt (Leitkleber, Aushaerten im Ofen ~140 C ausstehend) |
+| B | geloetet (Metallpunkt) |
+| C, N, H, M, L, ON, Q, X5, G, F, X6 | offen |

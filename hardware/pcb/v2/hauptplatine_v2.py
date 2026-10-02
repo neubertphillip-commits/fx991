@@ -141,14 +141,15 @@ def build():
     ds = board.GetDesignSettings()
     ds.SetBoardThickness(MM(0.8))
     ds.m_TrackMinWidth = MM(0.13)
-    ds.m_MinClearance = MM(0.13)       # JLCPCB: 0,127 mm (5 mil)
+    ds.m_MinClearance = MM(0.127)      # JLCPCB: 0,127 mm (5 mil)
+    ds.m_HoleClearance = MM(0.2)       # Bahn bis Bohrung; im JLC-DFM-Check pruefen
     ds.m_ViasMinSize = MM(0.5)
     ds.m_MinThroughDrill = MM(0.3)
     ds.m_CopperEdgeClearance = MM(0.4)
     ds.SetCopperLayerCount(2)
     nc = ds.m_NetSettings.m_DefaultNetClass
     nc.SetTrackWidth(MM(0.2))
-    nc.SetClearance(MM(0.13))
+    nc.SetClearance(MM(0.127))
     nc.SetViaDiameter(MM(0.5))
     nc.SetViaDrill(MM(0.3))
 
@@ -201,8 +202,8 @@ def build():
 
     # --- XIAO: Umriss, B2B-Buchse, Bruecken-Pads unter den Kantenpads ---
     silk_rect(board, XR - XIAO_W, YB - XIAO_L, XR, YB)
-    tp.silk_text(board, "XIAO ESP32S3 (Unterseite zur Platine, USB oben)", XR - XIAO_W / 2,
-                 YB - XIAO_L / 2 + 3.5, 0.8)
+    tp.silk_text(board, "XIAO (USB oben)", XR - XIAO_W / 2,
+                 YB - XIAO_L - 1.2, 0.8)
     b2b = tp.part(board, "J10", "DF40C-30DS-0.4V", B2B_X, B2B_Y)
     for p, net in B2B_PINS.items():
         col = (p - 1) % 15

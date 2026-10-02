@@ -118,6 +118,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
    Idee fuer Version 2: Platine uebernimmt die Sense-Platine (XIAO flach per B2B-Stecker, Kamera-FPC, PDM-Mikro).
    B2B ist Hirose DF40 (30 pol., min. 1,5 mm Stapelhoehe), Belegung und Kamera-LDOs in hardware/pcb/README.md.
    Hoehe dann ~5 mm hinter der Platine: passt nur mit ~1 mm aus der Rueckdeckel-Wanne (messen).
+   V2 gezeichnet (hardware/pcb/v2/, 02.10.): Tasten+MCP+DF40-B2B+Kamera-FPC+LDOs+Mikro+Pads fuer LT7680,
+   Akku, Qi (Schottky), Akkuteiler an D3; verdrahtet, DRC ohne Fehler. Entwurf: 9 offene Punkte in v2/README.md.
 8. Spaeter, wenn Hardware und Firmware laufen: eine eigene Android-App (.apk) statt Termux,
    fuer alles, nicht eine APK pro Aufgabe. Bis dahin Termux-Bridge.
    - Aufbau: Kern (Hintergrunddienst, Anmeldung, ein gesicherter Kanal) + Module, per

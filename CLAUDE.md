@@ -80,7 +80,8 @@ Funkdetektoren oder um bei Kontrollen unentdeckt zu bleiben).
   Rechner bricht Text selbst um (nur Zeilenanfaenge im RAM). Bilder erst mit LT7680-Treiber.
 - Tastatur: Casio-Platine (PWB-CY230-CL, vernickelt) bleibt als Tastatur, Silikonmatte mit
   Kohlenoppen darueber. Anzapfen an den Durchkontaktierungen auf der Rueckseite (Karte hardware/loetpunkte.jpg;
-  Ringe sind vermutlich Silberpaste und nehmen kein Zinn: Draht mit Silber-Leitkleber aufkleben, Heisskleber/Kapton als Zugentlastung) (0,1-mm-Lackdraht,
+  Ringe sind vermutlich Silberpaste und nehmen kein Zinn: Draht mit Silber-Leitkleber aufkleben, Heisskleber/Kapton als Zugentlastung;
+  Stand 04.10.2026: alle 16 Draehte dran, teils geklebt, B an Metallpunkt M28 geloetet) (0,1-mm-Lackdraht,
   flach mit Kapton). Casio-Chip (COB, U101) abgekoppelt: Klecks liess sich nicht abhebeln, stattdessen
   alle Bahnen entlang des weissen Rings um den Klecks durchgeritzt; Chip-Umwege weg, Leitungen intakt
   (nachgemessen). Batterie und Solarzelle abgeloetet (Pads P170-P173).
